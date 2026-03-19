@@ -7,13 +7,14 @@ import { Modal } from '@/components/Modal';
 
 interface AppUser {
   id:           string;
+  email:        string;
   display_name: string;
   role:         string;
   created_at:   string;
   last_sign_in: string | null;
 }
 
-const emptyCreate = { password: '', display_name: '', role: 'member' };
+const emptyCreate = { email: '', password: '', display_name: '', role: 'member' };
 
 export default function UsersPage() {
   const [users,      setUsers]      = useState<AppUser[]>([]);
@@ -62,8 +63,8 @@ export default function UsersPage() {
   };
 
   const handleCreate = async () => {
-    if (!createForm.display_name || !createForm.password) {
-      setError('Display name and password are required.'); return;
+    if (!createForm.email || !createForm.display_name || !createForm.password) {
+      setError('Email, display name, and password are required.'); return;
     }
     setSaving(true); setError(null);
     const res = await fetch('/api/admin/users', {
@@ -141,6 +142,7 @@ export default function UsersPage() {
             <thead>
               <tr className="border-b border-border-subtle">
                 <th className="text-left font-mono text-[0.6rem] text-text-muted uppercase tracking-widest px-4 py-3">Display Name</th>
+                <th className="text-left font-mono text-[0.6rem] text-text-muted uppercase tracking-widest px-4 py-3 hidden sm:table-cell">Email</th>
                 <th className="text-left font-mono text-[0.6rem] text-text-muted uppercase tracking-widest px-4 py-3 hidden md:table-cell">Role</th>
                 <th className="text-left font-mono text-[0.6rem] text-text-muted uppercase tracking-widest px-4 py-3 hidden lg:table-cell">Last Sign-in</th>
                 <th className="px-4 py-3" />
@@ -151,6 +153,9 @@ export default function UsersPage() {
                 <tr key={u.id} className="border-b border-border-subtle/50 hover:bg-card-hover transition-colors">
                   <td className="px-4 py-3 font-mono text-sm text-text-primary">
                     {u.display_name || <span className="text-text-muted italic">—</span>}
+                  </td>
+                  <td className="px-4 py-3 hidden sm:table-cell font-mono text-[0.65rem] text-text-secondary">
+                    {u.email || <span className="text-text-muted italic">—</span>}
                   </td>
                   <td className="px-4 py-3 hidden md:table-cell">
                     {u.role === 'admin' ? (
@@ -191,6 +196,9 @@ export default function UsersPage() {
           <Input label="Display Name" value={createForm.display_name}
             onChange={(e) => setCreateForm({ ...createForm, display_name: e.target.value })}
             placeholder="e.g. Mike" />
+          <Input label="Email" type="email" value={createForm.email}
+            onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+            placeholder="player@example.com" />
           <Input label="Temporary Password" type="password" value={createForm.password}
             onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
             placeholder="Share this with the player" />
