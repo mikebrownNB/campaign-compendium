@@ -169,7 +169,10 @@ function MembersTab({ campaignId }: { campaignId: string }) {
           {members.map(m => (
             <div key={m.id} className="flex items-center justify-between bg-deep/30 rounded-lg px-4 py-2">
               <div>
-                <span className="font-mono text-sm text-text-primary">{m.user_id}</span>
+                <span className="font-mono text-sm text-text-primary">{m.display_name || m.user_id}</span>
+                {m.email && (
+                  <span className="ml-2 font-mono text-[0.6rem] text-text-muted">{m.email}</span>
+                )}
                 <span className="ml-2 font-mono text-[0.6rem] uppercase tracking-wider text-text-muted border border-border-subtle rounded px-2 py-0.5">
                   {m.role}
                 </span>

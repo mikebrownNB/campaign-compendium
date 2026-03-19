@@ -1,4 +1,5 @@
 import { getSupabaseServer } from '@/lib/supabase-server';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -18,7 +19,23 @@ export async function GET(
       .eq('campaign_id', campaignId);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json(data);
+
+    // Enrich with display_name and email from auth
+    const { data: usersData } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+    const userMap = new Map(
+      (usersData?.users ?? []).map(u => [u.id, {
+        display_name: (u.user_metadata?.display_name as string) ?? '',
+        email: u.email ?? '',
+      }])
+    );
+
+    const enriched = (data ?? []).map(m => ({
+      ...m,
+      display_name: userMap.get(m.user_id)?.display_name ?? m.user_id,
+      email: userMap.get(m.user_id)?.email ?? '',
+    }));
+
+    return NextResponse.json(enriched);
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Unknown error';
     return NextResponse.json({ error: msg }, { status: 500 });
