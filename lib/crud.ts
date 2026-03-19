@@ -1,7 +1,7 @@
 import { getSupabaseServer } from './supabase-server';
 import { NextRequest, NextResponse } from 'next/server';
 
-type TableName = 'calendar_events' | 'npcs' | 'locations' | 'factions' | 'loot_items' | 'sessions' | 'threads' | 'map_markers' | 'personal_notes' | 'settings' | 'campaigns' | 'campaign_members' | 'campaign_maps';
+type TableName = 'calendar_events' | 'npcs' | 'locations' | 'factions' | 'loot_items' | 'sessions' | 'threads' | 'map_markers' | 'personal_notes' | 'settings' | 'campaigns' | 'campaign_members' | 'campaign_maps' | 'players';
 
 // ── Campaign-scoped CRUD handlers ──────────────────────────────────────────────
 export function createCampaignCrudHandlers(table: TableName, orderBy: string, campaignId: string) {
