@@ -57,7 +57,7 @@ export default function PlayersPage() {
         <p className="text-text-muted font-mono text-sm">No players yet. Add one above.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {players.map((char, i) => (
+          {players.map((char) => (
             <div key={char.id} className="group relative">
               <button
                 onClick={() => char.dndbeyond_url ? setSelected(char) : undefined}
@@ -67,11 +67,8 @@ export default function PlayersPage() {
                                 hover:bg-card-hover hover:border-border-glow hover:-translate-y-1
                                 hover:shadow-lg hover:shadow-accent-gold/10 relative overflow-hidden h-full">
                   <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-accent-gold to-accent-purple opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <div className="flex items-start justify-between mb-3">
+                  <div className="mb-3">
                     <span className="text-2xl">🎲</span>
-                    <span className="font-mono text-xs text-text-muted border border-border-subtle rounded px-1.5 py-0.5">
-                      PC {i + 1}
-                    </span>
                   </div>
                   <h3 className="font-display text-sm font-bold text-accent-gold tracking-wider mb-1">
                     {char.name}
