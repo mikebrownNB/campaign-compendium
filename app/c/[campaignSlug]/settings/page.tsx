@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCampaign } from '@/lib/CampaignContext';
+import { getSupabaseBrowser } from '@/lib/supabase-browser';
 import { PageHeader, Button, Input, Textarea, ConfirmDelete } from '@/components/UI';
 import { Modal } from '@/components/Modal';
 import type { CampaignMap, WidgetConfig } from '@/lib/types';
@@ -218,8 +219,12 @@ function MembersTab({ campaignId }: { campaignId: string }) {
 function MapsTab({ campaignId, initialMaps }: { campaignId: string; initialMaps: CampaignMap[] }) {
   const [maps, setMaps] = useState(initialMaps);
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ slug: '', name: '', image_url: '', description: '' });
-  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ slug: '', name: '', description: '' });
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadMaps = async () => {
     const res = await fetch(`/api/campaigns/${campaignId}/maps`);
@@ -227,21 +232,38 @@ function MapsTab({ campaignId, initialMaps }: { campaignId: string; initialMaps:
     setMaps(Array.isArray(data) ? data : []);
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0] ?? null;
+    setFile(f);
+    setPreview(f ? URL.createObjectURL(f) : null);
+  };
+
   const handleAdd = async () => {
-    if (!form.name.trim() || !form.image_url.trim()) return;
-    setSaving(true);
-    const slug = form.slug.trim() || form.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    if (!form.name.trim() || !file) { setUploadError('Map name and image are required.'); return; }
+    setUploading(true); setUploadError(null);
     try {
+      const supabase = getSupabaseBrowser();
+      const ext = file.name.split('.').pop();
+      const path = `${campaignId}/${Date.now()}.${ext}`;
+      const { error: uploadErr } = await supabase.storage.from('maps').upload(path, file);
+      if (uploadErr) { setUploadError(uploadErr.message); return; }
+
+      const { data: { publicUrl } } = supabase.storage.from('maps').getPublicUrl(path);
+      const slug = form.slug.trim() || form.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
       await fetch(`/api/campaigns/${campaignId}/maps`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, slug, sort_order: maps.length }),
+        body: JSON.stringify({ name: form.name, slug, image_url: publicUrl, description: form.description, sort_order: maps.length }),
       });
-      setForm({ slug: '', name: '', image_url: '', description: '' });
+
+      setForm({ slug: '', name: '', description: '' });
+      setFile(null); setPreview(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
       setShowAdd(false);
       loadMaps();
     } finally {
-      setSaving(false);
+      setUploading(false);
     }
   };
 
@@ -254,17 +276,32 @@ function MapsTab({ campaignId, initialMaps }: { campaignId: string; initialMaps:
     <div className="bg-card border border-border-subtle rounded-lg p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-display text-sm text-accent-gold tracking-wider">Campaign Maps</h3>
-        <Button size="sm" onClick={() => setShowAdd(!showAdd)}>+ Add Map</Button>
+        <Button size="sm" onClick={() => { setShowAdd(!showAdd); setUploadError(null); }}>+ Add Map</Button>
       </div>
 
       {showAdd && (
         <div className="bg-deep/50 rounded-lg p-4 mb-4">
           <Input label="Map Name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. World Map" />
           <Input label="URL Slug" value={form.slug} onChange={e => setForm(f => ({ ...f, slug: e.target.value }))} placeholder="world-map (auto-generated if blank)" />
-          <Input label="Image URL" value={form.image_url} onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))} placeholder="/maps/world-map.jpg" />
           <Input label="Description" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Optional description" />
+          <div className="flex flex-col gap-1 mb-3">
+            <label className="font-mono text-[0.65rem] text-text-muted uppercase tracking-widest">Map Image</label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="font-mono text-xs text-text-secondary file:mr-3 file:font-mono file:text-xs file:bg-deep file:border file:border-border-subtle file:rounded file:px-2 file:py-1 file:text-text-primary file:cursor-pointer"
+            />
+            {preview && (
+              <img src={preview} alt="Preview" className="mt-2 h-24 w-auto rounded border border-border-subtle object-cover" />
+            )}
+          </div>
+          {uploadError && (
+            <p className="font-mono text-[0.65rem] text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-3 py-2 mb-2">✕ {uploadError}</p>
+          )}
           <div className="flex gap-2 mt-2">
-            <Button size="sm" onClick={handleAdd} disabled={saving}>{saving ? '...' : 'Add Map'}</Button>
+            <Button size="sm" onClick={handleAdd} disabled={uploading}>{uploading ? 'Uploading…' : 'Add Map'}</Button>
             <Button size="sm" variant="ghost" onClick={() => setShowAdd(false)}>Cancel</Button>
           </div>
         </div>
