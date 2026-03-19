@@ -1,5 +1,4 @@
 import React from 'react';
-import { supabase } from '@/lib/supabase';
 import { getSupabaseServer } from '@/lib/supabase-server';
 import { redirect } from 'next/navigation';
 import { CampaignShell } from './CampaignShell';
@@ -14,8 +13,8 @@ export default async function CampaignLayout({
   const { campaignSlug } = params;
 
   // Get current user
-  const serverSupabase = await getSupabaseServer();
-  const { data: { user } } = await serverSupabase.auth.getUser();
+  const supabase = await getSupabaseServer();
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
   // Look up campaign by slug
