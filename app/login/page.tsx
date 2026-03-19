@@ -6,7 +6,7 @@ import { getSupabaseBrowser } from '@/lib/supabase-browser';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [name,     setName]     = useState('');
+  const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
   const [error,    setError]    = useState<string | null>(null);
   const [loading,  setLoading]  = useState(false);
@@ -16,25 +16,14 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
 
-    // Step 1: resolve display name → email
-    const lookup = await fetch(
-      `/api/auth/lookup?name=${encodeURIComponent(name.trim())}`,
-    );
-
-    if (!lookup.ok) {
-      setError('Name not recognised. Contact your DM.');
-      setLoading(false);
-      return;
-    }
-
-    const { email } = await lookup.json();
-
-    // Step 2: sign in with the resolved email + supplied password
     const supabase = getSupabaseBrowser();
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
 
     if (authError) {
-      setError('Incorrect password.');
+      setError('Incorrect email or password.');
       setLoading(false);
     } else {
       router.push('/');
@@ -65,16 +54,16 @@ export default function LoginPage() {
         >
           <div className="flex flex-col gap-1">
             <label className="font-mono text-[0.65rem] text-text-muted uppercase tracking-widest">
-              Your Name
+              Email
             </label>
             <input
-              type="text"
+              type="email"
               required
-              autoComplete="username"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="bg-[#0a0a12] border border-border-subtle rounded-lg px-3 py-2 text-sm text-text-primary font-mono focus:outline-none focus:border-accent-gold/50 transition-colors"
-              placeholder="e.g. Mike"
+              placeholder="you@example.com"
             />
           </div>
 
@@ -109,7 +98,7 @@ export default function LoginPage() {
         </form>
 
         <p className="text-center font-mono text-[0.6rem] text-text-muted mt-6">
-          Contact your DM if you need access.
+          Contact your DM if you need an account.
         </p>
       </div>
     </div>
