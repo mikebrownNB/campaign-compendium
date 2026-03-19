@@ -101,6 +101,7 @@ function GeneralTab({ campaign }: { campaign: any }) {
 // ── Members Tab ────────────────────────────────────────────────────────────────
 function MembersTab({ campaignId }: { campaignId: string }) {
   const [members, setMembers] = useState<any[]>([]);
+  const [availableUsers, setAvailableUsers] = useState<{ id: string; display_name: string; email: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [addUserId, setAddUserId] = useState('');
@@ -108,16 +109,21 @@ function MembersTab({ campaignId }: { campaignId: string }) {
   const [saving, setSaving] = useState(false);
 
   const loadMembers = useCallback(async () => {
-    const res = await fetch(`/api/campaigns/${campaignId}/members`);
-    const data = await res.json();
-    setMembers(Array.isArray(data) ? data : []);
+    const [membersRes, usersRes] = await Promise.all([
+      fetch(`/api/campaigns/${campaignId}/members`),
+      fetch(`/api/campaigns/${campaignId}/available-users`),
+    ]);
+    const membersData = await membersRes.json();
+    const usersData = await usersRes.json();
+    setMembers(Array.isArray(membersData) ? membersData : []);
+    setAvailableUsers(Array.isArray(usersData) ? usersData : []);
     setLoading(false);
   }, [campaignId]);
 
   useEffect(() => { loadMembers(); }, [loadMembers]);
 
   const handleAdd = async () => {
-    if (!addUserId.trim()) return;
+    if (!addUserId) return;
     setSaving(true);
     try {
       await fetch(`/api/campaigns/${campaignId}/members`, {
@@ -138,27 +144,44 @@ function MembersTab({ campaignId }: { campaignId: string }) {
     loadMembers();
   };
 
+  const selectClass = "bg-deep border border-border-subtle rounded-lg px-3 py-2 text-text-primary font-body text-sm";
+
   return (
     <div className="bg-card border border-border-subtle rounded-lg p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-display text-sm text-accent-gold tracking-wider">Members</h3>
-        <Button size="sm" onClick={() => setShowAdd(!showAdd)}>+ Add Member</Button>
+        <Button size="sm" onClick={() => { setShowAdd(!showAdd); setAddUserId(''); }}>+ Add Member</Button>
       </div>
 
       {showAdd && (
-        <div className="bg-deep/50 rounded-lg p-4 mb-4 flex gap-3 items-end">
-          <div className="flex-1">
-            <Input label="User ID" value={addUserId} onChange={e => setAddUserId(e.target.value)} placeholder="Paste the user's ID" />
+        <div className="bg-deep/50 rounded-lg p-4 mb-4 flex gap-3 items-end flex-wrap">
+          <div className="flex-1 min-w-[180px] flex flex-col gap-1">
+            <label className="font-mono text-[0.65rem] text-text-muted uppercase tracking-widest">User</label>
+            <select
+              value={addUserId}
+              onChange={e => setAddUserId(e.target.value)}
+              className={selectClass}
+            >
+              <option value="">— select a user —</option>
+              {availableUsers.map(u => (
+                <option key={u.id} value={u.id}>
+                  {u.display_name ? `${u.display_name} (${u.email})` : u.email}
+                </option>
+              ))}
+            </select>
           </div>
-          <select
-            value={addRole}
-            onChange={e => setAddRole(e.target.value as 'dm' | 'player')}
-            className="bg-deep border border-border-subtle rounded-lg px-3 py-2 text-text-primary font-body text-sm mb-3"
-          >
-            <option value="player">Player</option>
-            <option value="dm">DM</option>
-          </select>
-          <Button size="sm" onClick={handleAdd} disabled={saving}>{saving ? '...' : 'Add'}</Button>
+          <div className="flex flex-col gap-1">
+            <label className="font-mono text-[0.65rem] text-text-muted uppercase tracking-widest">Role</label>
+            <select
+              value={addRole}
+              onChange={e => setAddRole(e.target.value as 'dm' | 'player')}
+              className={selectClass}
+            >
+              <option value="player">Player</option>
+              <option value="dm">DM</option>
+            </select>
+          </div>
+          <Button size="sm" onClick={handleAdd} disabled={saving || !addUserId}>{saving ? '...' : 'Add'}</Button>
         </div>
       )}
 
