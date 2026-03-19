@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { getSupabaseServer } from '@/lib/supabase-server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -9,6 +9,7 @@ export async function GET(
   { params }: { params: { campaignId: string } },
 ) {
   try {
+    const supabase = await getSupabaseServer();
     const { campaignId } = params;
 
     const { data, error } = await supabase
@@ -31,6 +32,7 @@ export async function PUT(
   { params }: { params: { campaignId: string } },
 ) {
   try {
+    const supabase = await getSupabaseServer();
     const { campaignId } = params;
     const body = await request.json();
 
@@ -55,6 +57,7 @@ export async function DELETE(
   { params }: { params: { campaignId: string } },
 ) {
   try {
+    const supabase = await getSupabaseServer();
     const { campaignId } = params;
 
     const { error } = await supabase

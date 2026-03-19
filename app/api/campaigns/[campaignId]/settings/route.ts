@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 
-import { supabase } from '@/lib/supabase';
+import { getSupabaseServer } from '@/lib/supabase-server';
 import { NextRequest, NextResponse } from 'next/server';
 
 // GET /api/campaigns/[campaignId]/settings?key=xxx
@@ -9,6 +9,7 @@ export async function GET(req: NextRequest, { params }: { params: { campaignId: 
     const key = new URL(req.url).searchParams.get('key');
     if (!key) return NextResponse.json({ error: 'key required' }, { status: 400 });
 
+    const supabase = await getSupabaseServer();
     const { data, error } = await supabase
       .from('settings')
       .select('value')
@@ -39,6 +40,7 @@ export async function PUT(req: NextRequest, { params }: { params: { campaignId: 
     const { key, value } = await req.json();
     if (!key) return NextResponse.json({ error: 'key required' }, { status: 400 });
 
+    const supabase = await getSupabaseServer();
     // Try to update the existing row first
     const { data: updated, error: updateErr } = await supabase
       .from('settings')

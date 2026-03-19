@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { getSupabaseServer } from '@/lib/supabase-server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -9,6 +9,7 @@ export async function GET(
   { params }: { params: { campaignId: string } },
 ) {
   try {
+    const supabase = await getSupabaseServer();
     const { campaignId } = params;
 
     const { data, error } = await supabase
@@ -30,6 +31,7 @@ export async function POST(
   { params }: { params: { campaignId: string } },
 ) {
   try {
+    const supabase = await getSupabaseServer();
     const { campaignId } = params;
     const { user_id, role } = await request.json();
 
@@ -57,6 +59,7 @@ export async function DELETE(
   { params }: { params: { campaignId: string } },
 ) {
   try {
+    const supabase = await getSupabaseServer();
     const id = new URL(request.url).searchParams.get('id');
     if (!id) {
       return NextResponse.json({ error: 'id query param is required' }, { status: 400 });

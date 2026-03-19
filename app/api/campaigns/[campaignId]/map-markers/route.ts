@@ -1,11 +1,12 @@
 export const dynamic = "force-dynamic";
 
-import { supabase } from '@/lib/supabase';
+import { getSupabaseServer } from '@/lib/supabase-server';
 import { NextRequest, NextResponse } from 'next/server';
 
 // GET /api/campaigns/[campaignId]/map-markers?map_id=<slug>
 export async function GET(req: NextRequest, { params }: { params: { campaignId: string } }) {
   try {
+    const supabase = await getSupabaseServer();
     const mapId = new URL(req.url).searchParams.get('map_id');
     let query = supabase
       .from('map_markers')
@@ -23,6 +24,7 @@ export async function GET(req: NextRequest, { params }: { params: { campaignId: 
 // POST /api/campaigns/[campaignId]/map-markers
 export async function POST(req: NextRequest, { params }: { params: { campaignId: string } }) {
   try {
+    const supabase = await getSupabaseServer();
     const body = await req.json();
     const { data, error } = await supabase
       .from('map_markers')
@@ -39,6 +41,7 @@ export async function POST(req: NextRequest, { params }: { params: { campaignId:
 // PUT /api/campaigns/[campaignId]/map-markers
 export async function PUT(req: NextRequest, { params }: { params: { campaignId: string } }) {
   try {
+    const supabase = await getSupabaseServer();
     const { id, ...rest } = await req.json();
     if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
     const { data, error } = await supabase
@@ -58,6 +61,7 @@ export async function PUT(req: NextRequest, { params }: { params: { campaignId: 
 // DELETE /api/campaigns/[campaignId]/map-markers?id=<uuid>
 export async function DELETE(req: NextRequest, { params }: { params: { campaignId: string } }) {
   try {
+    const supabase = await getSupabaseServer();
     const id = new URL(req.url).searchParams.get('id');
     if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
     const { error } = await supabase

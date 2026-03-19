@@ -1,11 +1,12 @@
 export const dynamic = "force-dynamic";
 
-import { supabase } from '@/lib/supabase';
+import { getSupabaseServer } from '@/lib/supabase-server';
 import { createCampaignCrudHandlers } from '@/lib/crud';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest, { params }: { params: { campaignId: string } }) {
   try {
+    const supabase = await getSupabaseServer();
     const { data, error } = await supabase
       .from('calendar_events')
       .select('*')
