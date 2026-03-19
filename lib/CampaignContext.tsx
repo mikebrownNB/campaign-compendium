@@ -23,7 +23,12 @@ export function CampaignProvider({
   membership,
   maps,
   children,
-}: CampaignContextValue & { children: React.ReactNode }) {
+}: {
+  campaign: Campaign;
+  membership: CampaignMember;
+  maps: CampaignMap[];
+  children: React.ReactNode;
+}) {
   const isDM = membership.role === 'dm';
 
   return (
