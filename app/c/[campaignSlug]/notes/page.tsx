@@ -147,7 +147,7 @@ export default function NotesPage() {
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'personal_notes' },
         (payload) => {
-          const updated = payload.new as { id: string; title: string; user_id: string; updated_at: string };
+          const updated = payload.new as { id: string; title: string; content: string; user_id: string; updated_at: string };
 
           // Skip events we triggered ourselves
           if (suppressRef.current.has(updated.id)) {
@@ -164,7 +164,7 @@ export default function NotesPage() {
 
             return prev.map((n) =>
               n.id === updated.id
-                ? { ...n, title: updated.title, updated_at: updated.updated_at }
+                ? { ...n, title: updated.title, content: updated.content, updated_at: updated.updated_at }
                 : n,
             );
           });
