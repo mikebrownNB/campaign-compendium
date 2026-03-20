@@ -10,10 +10,13 @@ const HEADERS = {
 
 /**
  * Pick the best available avatar URL from a D&D Beyond character data object.
- * Tries several known fields in order of visual quality.
+ * The v5 API nests the avatar under `decorations.avatarUrl`; older fields
+ * are checked as fallbacks.
  */
 function pickAvatar(character: Record<string, any>): string | null {
   return (
+    character.decorations?.avatarUrl ||
+    character.decorations?.frameAvatarUrl ||
     character.decoratedAvatarUrl ||
     character.avatarUrl ||
     character.frameAvatarUrl ||
@@ -47,6 +50,7 @@ async function tryCharacterService(characterId: string) {
 
   console.log(
     `[dndbeyond] character-service ${characterId} → name="${character.name}" ` +
+    `decorations.avatarUrl="${character.decorations?.avatarUrl}" ` +
     `avatarUrl="${character.avatarUrl}" decoratedAvatarUrl="${character.decoratedAvatarUrl}"`,
   );
 
