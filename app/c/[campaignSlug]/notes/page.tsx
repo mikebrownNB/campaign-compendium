@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
 import { useCampaign } from '@/lib/CampaignContext';
 import type { PersonalNote, NoteUser } from '@/lib/types';
@@ -46,6 +46,27 @@ function SharingBadge({ note }: { note: PersonalNote }) {
   );
 }
 
+// ── Toast ──────────────────────────────────────────────────────────────────────
+
+type Toast = { id: string; message: string };
+
+function ToastStack({ toasts }: { toasts: Toast[] }) {
+  if (!toasts.length) return null;
+  return (
+    <div className="fixed top-4 right-4 z-[400] flex flex-col gap-2 pointer-events-none">
+      {toasts.map((t) => (
+        <div
+          key={t.id}
+          className="flex items-center gap-2 bg-card border border-accent-purple/40 text-text-primary text-xs font-mono px-4 py-2.5 rounded-lg shadow-lg animate-fade-in"
+        >
+          <span className="text-accent-purple">✎</span>
+          {t.message}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ── page ───────────────────────────────────────────────────────────────────────
 
 export default function NotesPage() {
@@ -70,6 +91,16 @@ export default function NotesPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [deleteId,   setDeleteId]   = useState<string | null>(null);
 
+  // Toast notifications
+  const [toasts,    setToasts]    = useState<Toast[]>([]);
+  const suppressRef = useRef<Set<string>>(new Set()); // note IDs we just saved ourselves
+
+  const addToast = useCallback((message: string) => {
+    const id = Math.random().toString(36).slice(2);
+    setToasts((prev) => [...prev, { id, message }]);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 4000);
+  }, []);
+
   // ── data fetching ─────────────────────────────────────────────────────────
 
   const fetchNotes = useCallback(async () => {
@@ -85,16 +116,16 @@ export default function NotesPage() {
   useEffect(() => {
     fetchNotes();
 
+    const supabase = getSupabaseBrowser();
+
     // Current user info
-    getSupabaseBrowser()
-      .auth.getUser()
-      .then(({ data }) => {
-        const u = data.user;
-        if (!u) return;
-        setCurrentUid(u.id);
-        const name = u.user_metadata?.display_name as string | undefined;
-        if (name) setDisplayName(name);
-      });
+    supabase.auth.getUser().then(({ data }) => {
+      const u = data.user;
+      if (!u) return;
+      setCurrentUid(u.id);
+      const name = u.user_metadata?.display_name as string | undefined;
+      if (name) setDisplayName(name);
+    });
 
     // Campaign members for the sharing picker (exclude self after we know uid)
     fetch(`/api/campaigns/${campaignId}/members`)
@@ -108,7 +139,41 @@ export default function NotesPage() {
           })),
         );
       });
-  }, [fetchNotes, campaignId]);
+
+    // ── Realtime: watch for note updates by other users ──────────────────────
+    const channel = supabase
+      .channel(`personal_notes_updates_${campaignId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'personal_notes' },
+        (payload) => {
+          const updated = payload.new as { id: string; title: string; user_id: string; updated_at: string };
+
+          // Skip events we triggered ourselves
+          if (suppressRef.current.has(updated.id)) {
+            suppressRef.current.delete(updated.id);
+            return;
+          }
+
+          // Only act if this note is already visible to us
+          setNotes((prev) => {
+            const existing = prev.find((n) => n.id === updated.id);
+            if (!existing) return prev;
+
+            addToast(`"${updated.title}" was updated`);
+
+            return prev.map((n) =>
+              n.id === updated.id
+                ? { ...n, title: updated.title, updated_at: updated.updated_at }
+                : n,
+            );
+          });
+        },
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [fetchNotes, campaignId, addToast]);
 
   // Filter self out of the member list once we know who we are
   const shareableMembers = members.filter((m) => m.id !== currentUid);
@@ -171,6 +236,8 @@ export default function NotesPage() {
           setSaveError(body.error ?? `Save failed (HTTP ${res.status})`);
         }
       } else if (editNote) {
+        // Suppress the realtime echo for our own save
+        suppressRef.current.add(editNote.id);
         const res = await fetch(`/api/campaigns/${campaignId}/personal-notes`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -181,6 +248,8 @@ export default function NotesPage() {
           setNotes((prev) => prev.map((n) => (n.id === updated.id ? updated : n)));
           setSlideOpen(false);
         } else {
+          // Save failed — remove suppress so the next real event isn't swallowed
+          suppressRef.current.delete(editNote.id);
           const body = await res.json().catch(() => ({}));
           setSaveError(body.error ?? `Save failed (HTTP ${res.status})`);
         }
@@ -403,6 +472,9 @@ export default function NotesPage() {
           onCancel={() => setDeleteId(null)}
         />
       </Modal>
+
+      {/* ── Realtime toasts ── */}
+      <ToastStack toasts={toasts} />
     </div>
   );
 }
