@@ -201,6 +201,10 @@ export default function PlayersPage() {
               onChange={e => setForm(f => ({ ...f, dndbeyond_url: e.target.value }))}
               placeholder="https://www.dndbeyond.com/characters/12345678"
             />
+            <p className="font-mono text-[0.6rem] text-text-muted -mt-1">
+              Avatar and character info are fetched automatically. The character must be set to{' '}
+              <span className="text-accent-gold">Public</span> in D&amp;D Beyond settings.
+            </p>
             {error && (
               <p className="font-mono text-[0.65rem] text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-3 py-2">✕ {error}</p>
             )}
