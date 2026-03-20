@@ -4,10 +4,13 @@ import { getSupabaseServer } from '@/lib/supabase-server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { NextRequest, NextResponse } from 'next/server';
 
-async function getUser() {
+// Verify auth and return the current user ID. All DB ops use supabaseAdmin
+// so we never hit RLS policies (avoiding the personal_notes ↔ note_shares
+// recursive policy loop). Auth is enforced here at the application level.
+async function getCurrentUserId(): Promise<string | null> {
   const supabase = await getSupabaseServer();
-  const { data: { user }, error } = await supabase.auth.getUser();
-  return { supabase, user, error };
+  const { data: { user } } = await supabase.auth.getUser();
+  return user?.id ?? null;
 }
 
 // Resolve display names for a set of user IDs
@@ -44,40 +47,39 @@ function formatNote(
 }
 
 // GET /api/campaigns/[campaignId]/personal-notes
-// Returns own notes + notes shared with the current user, all scoped to this campaign.
 export async function GET(
   _req: NextRequest,
   { params }: { params: { campaignId: string } },
 ) {
   try {
-    const { user } = await getUser();
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const userId = await getCurrentUserId();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const { campaignId } = params;
 
-    // 1. Own notes (with share lists)
+    // Own notes (with share lists)
     const { data: ownRows, error: ownErr } = await supabaseAdmin
       .from('personal_notes')
       .select('*, note_shares(user_id)')
       .eq('campaign_id', campaignId)
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .order('created_at', { ascending: false });
     if (ownErr) return NextResponse.json({ error: ownErr.message }, { status: 500 });
 
-    // 2. Note IDs individually shared with this user (within this campaign)
+    // Note IDs individually shared with this user
     const { data: myShareRows } = await supabaseAdmin
       .from('note_shares')
       .select('note_id')
-      .eq('user_id', user.id);
+      .eq('user_id', userId);
     const sharedNoteIds = (myShareRows ?? []).map((r: { note_id: string }) => r.note_id);
 
-    // 3. Notes shared with this user (shared_with_all OR individually), not owned by them
+    // Notes shared with this user (shared_with_all OR individually), not owned by them
     let sharedRows: Record<string, unknown>[] = [];
     {
       let q = supabaseAdmin
         .from('personal_notes')
         .select('*, note_shares(user_id)')
         .eq('campaign_id', campaignId)
-        .neq('user_id', user.id);
+        .neq('user_id', userId);
 
       if (sharedNoteIds.length > 0) {
         q = q.or(`shared_with_all.eq.true,id.in.(${sharedNoteIds.join(',')})`);
@@ -90,7 +92,7 @@ export async function GET(
       sharedRows = (data ?? []) as Record<string, unknown>[];
     }
 
-    // 4. Resolve owner display names for shared notes
+    // Resolve owner display names for shared notes
     const ownerIds = Array.from(new Set(sharedRows.map((n) => n.user_id as string)));
     const ownerMap = await resolveNames(ownerIds);
 
@@ -113,20 +115,20 @@ export async function POST(
   { params }: { params: { campaignId: string } },
 ) {
   try {
-    const { supabase, user } = await getUser();
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const userId = await getCurrentUserId();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const { campaignId } = params;
 
     const body = await req.json();
     const sharedWith: string[] = body.shared_with ?? [];
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('personal_notes')
       .insert({
         title:           body.title ?? '',
         content:         body.content ?? '',
         campaign_id:     campaignId,
-        user_id:         user.id,
+        user_id:         userId,
         shared_with_all: body.shared_with_all ?? false,
       })
       .select()
@@ -155,25 +157,26 @@ export async function PUT(
   { params: _params }: { params: { campaignId: string } },
 ) {
   try {
-    const { supabase, user } = await getUser();
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const userId = await getCurrentUserId();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { id, title, content, shared_with_all, shared_with } = await req.json();
     if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
 
     const sharedWith: string[] = shared_with ?? [];
 
-    const { data, error } = await supabase
+    // Only update if the note belongs to the current user
+    const { data, error } = await supabaseAdmin
       .from('personal_notes')
       .update({ title, content, shared_with_all: shared_with_all ?? false, updated_at: new Date().toISOString() })
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .select()
       .single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    // Replace individual shares: delete all then re-insert
+    // Replace individual shares
     await supabaseAdmin.from('note_shares').delete().eq('note_id', id);
     if (sharedWith.length > 0) {
       await supabaseAdmin
@@ -195,18 +198,18 @@ export async function DELETE(
   { params: _params }: { params: { campaignId: string } },
 ) {
   try {
-    const { supabase, user } = await getUser();
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const userId = await getCurrentUserId();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const id = new URL(req.url).searchParams.get('id');
     if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
 
-    // note_shares rows cascade-delete via FK
-    const { error } = await supabase
+    // Only delete if the note belongs to the current user
+    const { error } = await supabaseAdmin
       .from('personal_notes')
       .delete()
       .eq('id', id)
-      .eq('user_id', user.id);
+      .eq('user_id', userId);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ success: true });

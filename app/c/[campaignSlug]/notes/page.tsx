@@ -59,11 +59,12 @@ export default function NotesPage() {
   const [displayName, setDisplayName] = useState<string>('');
 
   // Slideout / form state
-  const [slideOpen, setSlideOpen] = useState(false);
-  const [slideMode, setSlideMode] = useState<'create' | 'edit'>('create');
-  const [editNote,  setEditNote]  = useState<PersonalNote | null>(null);
-  const [form,      setForm]      = useState(emptyForm);
-  const [saving,    setSaving]    = useState(false);
+  const [slideOpen,  setSlideOpen]  = useState(false);
+  const [slideMode,  setSlideMode]  = useState<'create' | 'edit'>('create');
+  const [editNote,   setEditNote]   = useState<PersonalNote | null>(null);
+  const [form,       setForm]       = useState(emptyForm);
+  const [saving,     setSaving]     = useState(false);
+  const [saveError,  setSaveError]  = useState<string | null>(null);
 
   // Accordion + delete state
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -118,6 +119,7 @@ export default function NotesPage() {
     setForm(emptyForm);
     setEditNote(null);
     setSlideMode('create');
+    setSaveError(null);
     setSlideOpen(true);
   };
 
@@ -130,6 +132,7 @@ export default function NotesPage() {
     });
     setEditNote(note);
     setSlideMode('edit');
+    setSaveError(null);
     setSlideOpen(true);
   };
 
@@ -147,6 +150,7 @@ export default function NotesPage() {
   const handleSave = async () => {
     if (!form.title.trim()) return;
     setSaving(true);
+    setSaveError(null);
     try {
       const payload = {
         ...form,
@@ -161,6 +165,10 @@ export default function NotesPage() {
         if (res.ok) {
           const created = await res.json();
           setNotes((prev) => [created, ...prev]);
+          setSlideOpen(false);
+        } else {
+          const body = await res.json().catch(() => ({}));
+          setSaveError(body.error ?? `Save failed (HTTP ${res.status})`);
         }
       } else if (editNote) {
         const res = await fetch(`/api/campaigns/${campaignId}/personal-notes`, {
@@ -171,9 +179,12 @@ export default function NotesPage() {
         if (res.ok) {
           const updated = await res.json();
           setNotes((prev) => prev.map((n) => (n.id === updated.id ? updated : n)));
+          setSlideOpen(false);
+        } else {
+          const body = await res.json().catch(() => ({}));
+          setSaveError(body.error ?? `Save failed (HTTP ${res.status})`);
         }
       }
-      setSlideOpen(false);
     } finally {
       setSaving(false);
     }
@@ -326,6 +337,12 @@ export default function NotesPage() {
             rows={10}
             placeholder="Write your notes here…"
           />
+
+          {saveError && (
+            <p className="font-mono text-[0.65rem] text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-3 py-2">
+              ✕ {saveError}
+            </p>
+          )}
 
           {/* Sharing */}
           <div className="border-t border-border-subtle pt-4">
