@@ -60,6 +60,20 @@ export async function DELETE(
     const supabase = await getSupabaseServer();
     const { campaignId } = params;
 
+    // Verify the requesting user is the campaign owner
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { data: camp } = await supabase
+      .from('campaigns')
+      .select('owner_id')
+      .eq('id', campaignId)
+      .single();
+
+    if (!camp || camp.owner_id !== user.id) {
+      return NextResponse.json({ error: 'Only the campaign owner can delete it.' }, { status: 403 });
+    }
+
     const { error } = await supabase
       .from('campaigns')
       .delete()

@@ -11,6 +11,13 @@ import type { CampaignMap, WidgetConfig } from '@/lib/types';
 export default function CampaignSettingsPage() {
   const router = useRouter();
   const { campaign, isDM, maps: initialMaps } = useCampaign();
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    getSupabaseBrowser().auth.getUser().then(({ data }) => {
+      setUserId(data.user?.id ?? null);
+    });
+  }, []);
 
   // Redirect non-DMs
   if (!isDM) {
@@ -22,10 +29,12 @@ export default function CampaignSettingsPage() {
     );
   }
 
-  return <SettingsContent campaign={campaign} initialMaps={initialMaps} />;
+  const isOwner = userId !== null && userId === campaign.owner_id;
+
+  return <SettingsContent campaign={campaign} initialMaps={initialMaps} isOwner={isOwner} />;
 }
 
-function SettingsContent({ campaign, initialMaps }: { campaign: any; initialMaps: CampaignMap[] }) {
+function SettingsContent({ campaign, initialMaps, isOwner }: { campaign: any; initialMaps: CampaignMap[]; isOwner: boolean }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'general' | 'members' | 'maps' | 'widgets'>('general');
 
@@ -47,7 +56,7 @@ function SettingsContent({ campaign, initialMaps }: { campaign: any; initialMaps
         ))}
       </div>
 
-      {activeTab === 'general' && <GeneralTab campaign={campaign} />}
+      {activeTab === 'general' && <GeneralTab campaign={campaign} isOwner={isOwner} />}
       {activeTab === 'members' && <MembersTab campaignId={campaign.id} />}
       {activeTab === 'maps' && <MapsTab campaignId={campaign.id} initialMaps={initialMaps} />}
       {activeTab === 'widgets' && <WidgetsTab campaign={campaign} />}
@@ -56,7 +65,7 @@ function SettingsContent({ campaign, initialMaps }: { campaign: any; initialMaps
 }
 
 // ── General Tab ────────────────────────────────────────────────────────────────
-function GeneralTab({ campaign }: { campaign: any }) {
+function GeneralTab({ campaign, isOwner }: { campaign: any; isOwner: boolean }) {
   const router = useRouter();
   const [form, setForm] = useState({
     name: campaign.name,
@@ -65,6 +74,10 @@ function GeneralTab({ campaign }: { campaign: any }) {
     tagline: campaign.settings?.tagline || '',
   });
   const [saving, setSaving] = useState(false);
+  const [deleteModal, setDeleteModal] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const handleSave = async () => {
     setSaving(true);
@@ -86,16 +99,86 @@ function GeneralTab({ campaign }: { campaign: any }) {
     }
   };
 
+  const handleDelete = async () => {
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch(`/api/campaigns/${campaign.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setDeleteError(body.error ?? `HTTP ${res.status}`);
+        return;
+      }
+      router.push('/');
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : 'Delete failed.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
-    <div className="bg-card border border-border-subtle rounded-lg p-6">
-      <Input label="Campaign Name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
-      <Input label="Subtitle" value={form.subtitle} onChange={e => setForm(f => ({ ...f, subtitle: e.target.value }))} placeholder="e.g. campaign world name" />
-      <Textarea label="Description" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
-      <Input label="Tagline" value={form.tagline} onChange={e => setForm(f => ({ ...f, tagline: e.target.value }))} placeholder="Optional motto or quote" />
-      <div className="mt-4">
-        <Button onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save Changes'}</Button>
+    <>
+      <div className="bg-card border border-border-subtle rounded-lg p-6">
+        <Input label="Campaign Name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+        <Input label="Subtitle" value={form.subtitle} onChange={e => setForm(f => ({ ...f, subtitle: e.target.value }))} placeholder="e.g. campaign world name" />
+        <Textarea label="Description" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+        <Input label="Tagline" value={form.tagline} onChange={e => setForm(f => ({ ...f, tagline: e.target.value }))} placeholder="Optional motto or quote" />
+        <div className="mt-4">
+          <Button onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save Changes'}</Button>
+        </div>
+
+        {isOwner && (
+          <div className="mt-8 pt-6 border-t border-accent-red/20">
+            <h4 className="font-display text-xs text-accent-red tracking-wider uppercase mb-1">Danger Zone</h4>
+            <p className="text-text-muted font-mono text-[0.65rem] mb-3">
+              Permanently delete this campaign and all its data. This cannot be undone.
+            </p>
+            <Button variant="danger" onClick={() => { setDeleteModal(true); setDeleteConfirm(''); setDeleteError(null); }}>
+              Delete Campaign
+            </Button>
+          </div>
+        )}
       </div>
-    </div>
+
+      <Modal
+        open={deleteModal}
+        onClose={() => { setDeleteModal(false); setDeleteConfirm(''); setDeleteError(null); }}
+        title="Delete Campaign"
+      >
+        <p className="text-text-secondary text-sm mb-4">
+          This will permanently delete{' '}
+          <strong className="text-accent-gold">{campaign.name}</strong>{' '}
+          and all its data — NPCs, locations, sessions, maps, and everything else. This cannot be undone.
+        </p>
+        <p className="font-mono text-[0.65rem] text-text-muted mb-2">
+          Type <span className="text-text-primary font-bold">{campaign.name}</span> to confirm:
+        </p>
+        <Input
+          label=""
+          value={deleteConfirm}
+          onChange={e => setDeleteConfirm(e.target.value)}
+          placeholder={campaign.name}
+        />
+        {deleteError && (
+          <p className="mt-2 font-mono text-xs text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-3 py-2">
+            ✕ {deleteError}
+          </p>
+        )}
+        <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border-subtle">
+          <Button variant="ghost" onClick={() => { setDeleteModal(false); setDeleteConfirm(''); setDeleteError(null); }}>
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            onClick={handleDelete}
+            disabled={deleteConfirm !== campaign.name || deleting}
+          >
+            {deleting ? 'Deleting…' : 'Delete Campaign'}
+          </Button>
+        </div>
+      </Modal>
+    </>
   );
 }
 
