@@ -172,8 +172,17 @@ export interface PersonalNote {
   user_id: string;
   title: string;
   content: string;
+  shared_with_all: boolean;
+  shared_with: string[];   // user IDs of individual share recipients
+  is_owner: boolean;
+  owner_name?: string;     // display name of the sharer — set when is_owner=false
   created_at?: string;
   updated_at?: string;
+}
+
+export interface NoteUser {
+  id: string;
+  display_name: string;
 }
 
 // ===== Calendar helpers =====
