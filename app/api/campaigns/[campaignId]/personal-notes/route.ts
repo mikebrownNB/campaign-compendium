@@ -152,6 +152,8 @@ export async function POST(
 }
 
 // PUT /api/campaigns/[campaignId]/personal-notes
+// Owners can edit everything (content + sharing settings).
+// Recipients (individually shared or shared_with_all) can edit title/content only.
 export async function PUT(
   req: NextRequest,
   { params: _params }: { params: { campaignId: string } },
@@ -163,29 +165,71 @@ export async function PUT(
     const { id, title, content, shared_with_all, shared_with } = await req.json();
     if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
 
-    const sharedWith: string[] = shared_with ?? [];
+    // Fetch the note to check ownership and current sharing state
+    const { data: existing, error: fetchErr } = await supabaseAdmin
+      .from('personal_notes')
+      .select('*, note_shares(user_id)')
+      .eq('id', id)
+      .single();
 
-    // Only update if the note belongs to the current user
+    if (fetchErr || !existing) {
+      return NextResponse.json({ error: 'Note not found' }, { status: 404 });
+    }
+
+    const isOwner = existing.user_id === userId;
+
+    if (!isOwner) {
+      // Check whether this user is an authorised recipient
+      const isSharedWithAll = existing.shared_with_all === true;
+      const shares = (existing.note_shares as { user_id: string }[] | null) ?? [];
+      const isRecipient = isSharedWithAll || shares.some((s) => s.user_id === userId);
+
+      if (!isRecipient) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+    }
+
+    // Build the update — only the owner may change sharing settings
+    const updateFields: Record<string, unknown> = {
+      title,
+      content,
+      updated_at: new Date().toISOString(),
+    };
+    if (isOwner) {
+      updateFields.shared_with_all = shared_with_all ?? false;
+    }
+
     const { data, error } = await supabaseAdmin
       .from('personal_notes')
-      .update({ title, content, shared_with_all: shared_with_all ?? false, updated_at: new Date().toISOString() })
+      .update(updateFields)
       .eq('id', id)
-      .eq('user_id', userId)
       .select()
       .single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    // Replace individual shares
-    await supabaseAdmin.from('note_shares').delete().eq('note_id', id);
-    if (sharedWith.length > 0) {
-      await supabaseAdmin
-        .from('note_shares')
-        .insert(sharedWith.map((uid) => ({ note_id: id, user_id: uid })));
+    // Only the owner may replace the individual share list
+    let currentShares: string[];
+    if (isOwner) {
+      const sharedWith: string[] = shared_with ?? [];
+      await supabaseAdmin.from('note_shares').delete().eq('note_id', id);
+      if (sharedWith.length > 0) {
+        await supabaseAdmin
+          .from('note_shares')
+          .insert(sharedWith.map((uid) => ({ note_id: id, user_id: uid })));
+      }
+      currentShares = sharedWith;
+    } else {
+      // Return the existing share list unchanged for recipients
+      const shares = (existing.note_shares as { user_id: string }[] | null) ?? [];
+      currentShares = shares.map((s) => s.user_id);
     }
 
     return NextResponse.json(
-      formatNote({ ...data, note_shares: sharedWith.map((uid) => ({ user_id: uid })) }, true),
+      formatNote(
+        { ...data, note_shares: currentShares.map((uid) => ({ user_id: uid })) },
+        isOwner,
+      ),
     );
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Unknown error' }, { status: 500 });

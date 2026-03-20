@@ -227,14 +227,12 @@ export default function NotesPage() {
           </div>
         </div>
         <div className="flex items-center gap-2 ml-2 shrink-0">
-          {note.is_owner && (
-            <button
-              onClick={(e) => { e.stopPropagation(); openEdit(note); }}
-              className="text-text-muted hover:text-accent-gold text-xs font-mono transition-colors"
-            >
-              Edit
-            </button>
-          )}
+          <button
+            onClick={(e) => { e.stopPropagation(); openEdit(note); }}
+            className="text-text-muted hover:text-accent-gold text-xs font-mono transition-colors"
+          >
+            Edit
+          </button>
           <span className={`text-accent-purple transition-transform ${expandedId === note.id ? 'rotate-180' : ''}`}>▼</span>
         </div>
       </div>
@@ -245,7 +243,7 @@ export default function NotesPage() {
             {note.content || <span className="italic text-text-muted">No content.</span>}
           </p>
           {note.is_owner && (
-            <div className="flex items-center gap-4 mt-3">
+            <div className="mt-3">
               <button
                 onClick={() => setDeleteId(note.id)}
                 className="text-text-muted hover:text-accent-red text-xs font-mono transition-colors"
@@ -308,7 +306,7 @@ export default function NotesPage() {
         title={slideMode === 'create' ? 'New Note' : 'Edit Note'}
         headerExtra={
           <div className="flex gap-2">
-            {slideMode === 'edit' && editNote && (
+            {slideMode === 'edit' && editNote?.is_owner && (
               <Button
                 variant="ghost"
                 className="text-accent-red hover:text-accent-red"
@@ -344,7 +342,8 @@ export default function NotesPage() {
             </p>
           )}
 
-          {/* Sharing */}
+          {/* Sharing — only the note owner can change sharing settings */}
+          {(slideMode === 'create' || editNote?.is_owner) && (
           <div className="border-t border-border-subtle pt-4">
             <p className="font-display text-xs tracking-widest text-text-muted uppercase mb-3">Sharing</p>
 
@@ -393,6 +392,7 @@ export default function NotesPage() {
               </div>
             )}
           </div>
+          )}
         </div>
       </SlideOut>
 
