@@ -157,7 +157,7 @@ export default function CalendarPage() {
 
   return (
     <div className="animate-fade-in">
-      <PageHeader icon="\uD83D\uDCC5" title="Calendar">
+      <PageHeader icon="📅" title="Calendar">
         <Button onClick={() => openCreate()}>+ New Event</Button>
       </PageHeader>
 
@@ -165,14 +165,14 @@ export default function CalendarPage() {
       {mounted && (
         <div className="flex items-center justify-between gap-3 mb-5 px-4 py-2.5 bg-gradient-to-r from-accent-gold/10 to-accent-purple/10 border border-accent-gold/20 rounded-lg">
           <div className="flex items-center gap-3 min-w-0">
-            <span className="text-accent-gold text-lg flex-shrink-0">\uD83D\uDCCD</span>
+            <span className="text-accent-gold text-lg flex-shrink-0">📍</span>
             <div className="min-w-0">
               <p className="font-mono text-[0.6rem] text-text-muted uppercase tracking-wider">Current Campaign Date</p>
               <p className="font-display text-sm font-bold text-text-primary leading-tight">
                 Year {currentDate.year}
-                <span className="text-text-muted font-normal mx-1.5">\u00B7</span>
+                <span className="text-text-muted font-normal mx-1.5">·</span>
                 <span className="text-accent-gold">{MONTHS[currentDate.month].name}</span>
-                <span className="text-text-muted font-normal mx-1.5">\u00B7</span>
+                <span className="text-text-muted font-normal mx-1.5">·</span>
                 Day {currentDate.day}
                 <span className={`ml-2 font-mono text-[0.55rem] uppercase px-1.5 py-0.5 rounded ${SEASON_BADGE[MONTHS[currentDate.month].season]}`}>
                   {MONTHS[currentDate.month].season}
@@ -229,7 +229,7 @@ export default function CalendarPage() {
             {month.season}
           </span>
           <div className="font-mono text-[0.6rem] text-text-muted mt-0.5">
-            Year {currentYear} \u00B7 Month {currentMonth + 1} of {MONTHS.length}
+            Year {currentYear} · Month {currentMonth + 1} of {MONTHS.length}
           </div>
         </div>
         <Button variant="secondary" onClick={nextMonth}>Next</Button>
@@ -361,12 +361,12 @@ export default function CalendarPage() {
         <div className="mt-3 px-3 py-2 bg-card rounded-lg border border-border-subtle">
           <p className="font-mono text-xs text-text-muted">Preview</p>
           <p className="font-display text-sm font-bold text-accent-gold mt-0.5">
-            Year {dateForm.year} \u00B7 {MONTHS[dateForm.month]?.name} \u00B7 Day {dateForm.day}
+            Year {dateForm.year} · {MONTHS[dateForm.month]?.name} · Day {dateForm.day}
           </p>
         </div>
         {dateError && (
           <p className="mt-3 font-mono text-xs text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-3 py-2">
-            \u2715 Save failed: {dateError}
+            ✕ Save failed: {dateError}
           </p>
         )}
         <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border-subtle">
@@ -389,7 +389,7 @@ export default function CalendarPage() {
             <p className="text-text-secondary text-sm leading-relaxed mb-4">{viewEvent.description}</p>
             <p className="font-mono text-[0.7rem] text-text-muted">
               {viewEvent.session ? `Session ${viewEvent.session} \u00B7 ` : ''}
-              Year {viewEvent.year} \u00B7 {MONTHS[viewEvent.month]?.name} {viewEvent.day}
+              Year {viewEvent.year} · {MONTHS[viewEvent.month]?.name} {viewEvent.day}
             </p>
             <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border-subtle">
               <Button variant="danger" size="sm" onClick={() => { setDeleteId(viewEvent.id); setModal(null); setViewEvent(null); }}>Delete</Button>

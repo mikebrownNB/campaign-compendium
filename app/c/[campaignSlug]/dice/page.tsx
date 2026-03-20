@@ -87,7 +87,7 @@ export default function DiceRollerPage() {
 
   return (
     <div className="animate-fade-in max-w-2xl">
-      <PageHeader icon="\uD83C\uDFB2" title="Dice Roller" />
+      <PageHeader icon="🎲" title="Dice Roller" />
 
       {/* \u2500\u2500 Die buttons \u2500\u2500 */}
       <div className="grid grid-cols-4 gap-3 mb-5">
@@ -109,7 +109,7 @@ export default function DiceRollerPage() {
                   className="w-6 h-6 rounded border border-border-subtle font-mono text-sm text-text-muted
                              hover:text-accent-red hover:border-accent-red/40 disabled:opacity-20
                              disabled:cursor-not-allowed transition-colors"
-                >\u2212</button>
+                >−</button>
                 <span className="font-mono text-sm text-text-primary w-5 text-center select-none">
                   {count || <span className="text-text-muted">0</span>}
                 </span>
@@ -129,7 +129,7 @@ export default function DiceRollerPage() {
         {/* Pool label */}
         <div className="flex-1 bg-card border border-border-subtle rounded-lg px-4 py-2 font-mono text-sm min-h-[2.5rem] flex items-center">
           {totalDice === 0
-            ? <span className="text-text-muted">Select dice above\u2026</span>
+            ? <span className="text-text-muted">Select dice above…</span>
             : <span className="text-text-secondary">{poolLabel(pool, modifier)}</span>
           }
         </div>
@@ -141,7 +141,7 @@ export default function DiceRollerPage() {
             <button
               onClick={() => setModifier(m => m - 1)}
               className="w-6 h-8 border border-r-0 border-border-subtle rounded-l font-mono text-sm text-text-muted hover:text-accent-red transition-colors"
-            >\u2212</button>
+            >−</button>
             <input
               type="number"
               value={modifier}
@@ -170,7 +170,7 @@ export default function DiceRollerPage() {
                      text-accent-gold uppercase hover:bg-accent-gold/20 disabled:opacity-30 disabled:cursor-not-allowed
                      transition-all active:scale-95"
         >
-          \uD83C\uDFB2 Roll
+          🎲 Roll
         </button>
       </div>
 
@@ -187,7 +187,7 @@ export default function DiceRollerPage() {
             </p>
             {result.modifier !== 0 && (
               <p className="font-mono text-xs text-text-muted mt-1">
-                {result.subtotal} {result.modifier > 0 ? '+' : '\u2212'} {Math.abs(result.modifier)} modifier
+                {result.subtotal} {result.modifier > 0 ? '+' : '−'} {Math.abs(result.modifier)} modifier
               </p>
             )}
             <p className="font-mono text-[0.6rem] text-text-muted mt-0.5">{result.pool}</p>
@@ -210,7 +210,7 @@ export default function DiceRollerPage() {
                 >
                   <span className={`font-mono text-sm font-bold ${isCrit ? 'text-accent-gold' : isFumble ? 'text-accent-red' : 'text-text-primary'}`}>
                     {r.value}
-                    {isCrit && <span className="text-[0.6rem] ml-0.5">\u2605</span>}
+                    {isCrit && <span className="text-[0.6rem] ml-0.5">★</span>}
                   </span>
                   <span className={`font-mono text-[0.6rem] ${dieColour(r.die)}`}>d{r.die}</span>
                 </div>

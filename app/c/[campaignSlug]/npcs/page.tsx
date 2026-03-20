@@ -62,7 +62,7 @@ export default function NPCsPage() {
 
   const SortIcon = ({ col }: { col: SortKey }) =>
     sortKey !== col
-      ? <span className="text-text-muted/40 ml-1">\u2195</span>
+      ? <span className="text-text-muted/40 ml-1">↕</span>
       : <span className="text-accent-gold ml-1">{sortDir === 'asc' ? '\u2191' : '\u2193'}</span>;
 
   const openCreate = () => { setForm(empty); setEditId(null); setSlideOpen(true); };
@@ -86,7 +86,7 @@ export default function NPCsPage() {
 
   return (
     <div className="animate-fade-in">
-      <PageHeader icon="\uD83D\uDC65" title="NPCs">
+      <PageHeader icon="👥" title="NPCs">
         <div className="flex gap-2 items-center">
           <span className="font-mono text-xs text-text-muted">{processed.length} of {items.length}</span>
           <Button onClick={openCreate}>+ New NPC</Button>
@@ -96,7 +96,7 @@ export default function NPCsPage() {
       {/* Search + Filters */}
       <div className="mb-6 flex flex-col gap-3">
         <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-sm">\uD83D\uDD0D</span>
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-sm">🔍</span>
           <input
             className="w-full bg-card border border-border-subtle rounded-lg pl-9 pr-4 py-2.5 text-text-primary font-body text-sm focus:outline-none focus:border-accent-purple transition-colors placeholder:text-text-muted/50"
             placeholder="Search by name, role, faction, location, or description\u2026"
@@ -104,7 +104,7 @@ export default function NPCsPage() {
             onChange={(e) => setSearch(e.target.value)}
           />
           {search && (
-            <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary text-sm">\u2715</button>
+            <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary text-sm">✕</button>
           )}
         </div>
         <div className="flex gap-3 flex-wrap items-center">
@@ -130,9 +130,9 @@ export default function NPCsPage() {
 
       {/* Table */}
       {loading ? (
-        <p className="text-text-muted font-mono text-sm">Loading\u2026</p>
+        <p className="text-text-muted font-mono text-sm">Loading…</p>
       ) : processed.length === 0 ? (
-        <EmptyState icon="\uD83D\uDC65" message={search || activeFilterCount > 0 ? 'No NPCs match your filters.' : 'No NPCs yet. Create your first one.'} />
+        <EmptyState icon="👥" message={search || activeFilterCount > 0 ? 'No NPCs match your filters.' : 'No NPCs yet. Create your first one.'} />
       ) : (
         <div className="overflow-x-auto border border-border-subtle rounded-lg">
           <table className="w-full border-collapse min-w-[700px]">
@@ -166,12 +166,12 @@ export default function NPCsPage() {
                   <td className="p-3">
                     {n.faction
                       ? <Tag variant="faction">{n.faction}</Tag>
-                      : <span className="text-text-muted/40 font-mono text-xs">\u2014</span>}
+                      : <span className="text-text-muted/40 font-mono text-xs">—</span>}
                   </td>
                   <td className="p-3">
                     {n.location
                       ? <span className="font-mono text-xs text-accent-blue">{n.location}</span>
-                      : <span className="text-text-muted/40 font-mono text-xs">\u2014</span>}
+                      : <span className="text-text-muted/40 font-mono text-xs">—</span>}
                   </td>
                   <td className="p-3 max-w-xs">
                     <p className="text-text-secondary text-xs line-clamp-2">{n.description}</p>
@@ -180,7 +180,7 @@ export default function NPCsPage() {
                     <button
                       onClick={(e) => { e.stopPropagation(); setDeleteId(n.id); }}
                       className="text-text-muted/30 hover:text-accent-red text-xs font-mono transition-colors opacity-0 group-hover:opacity-100"
-                    >\u2715</button>
+                    >✕</button>
                   </td>
                 </tr>
               ))}

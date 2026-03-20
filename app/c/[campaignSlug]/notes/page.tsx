@@ -83,7 +83,7 @@ export default function NotesPage() {
   return (
     <div className="animate-fade-in">
       <PageHeader
-        icon="\uD83D\uDCD3"
+        icon="📓"
         title="My Notes"
         subtitle={displayName ? `Private notes for ${displayName}` : 'Private \u2014 visible only to you'}
       >
@@ -91,9 +91,9 @@ export default function NotesPage() {
       </PageHeader>
 
       {loading ? (
-        <p className="text-text-muted font-mono text-sm">Loading\u2026</p>
+        <p className="text-text-muted font-mono text-sm">Loading…</p>
       ) : items.length === 0 ? (
-        <EmptyState icon="\uD83D\uDCD3" message="No notes yet. Add your first one!" />
+        <EmptyState icon="📓" message="No notes yet. Add your first one!" />
       ) : (
         <div className="flex flex-col gap-2">
           {items.map((note) => (
@@ -120,7 +120,7 @@ export default function NotesPage() {
                   >
                     Edit
                   </button>
-                  <span className={`text-accent-purple transition-transform ${expandedId === note.id ? 'rotate-180' : ''}`}>\u25BC</span>
+                  <span className={`text-accent-purple transition-transform ${expandedId === note.id ? 'rotate-180' : ''}`}>▼</span>
                 </div>
               </div>
 

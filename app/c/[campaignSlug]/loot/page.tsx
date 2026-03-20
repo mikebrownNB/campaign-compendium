@@ -27,11 +27,11 @@ export default function LootPage() {
 
   return (
     <div className="animate-fade-in">
-      <PageHeader icon="\uD83D\uDCB0" title="Loot & Items">
+      <PageHeader icon="💰" title="Loot & Items">
         <Button onClick={openCreate}>+ New Item</Button>
       </PageHeader>
       {loading ? <p className="text-text-muted font-mono text-sm">Loading...</p> : items.length === 0 ? (
-        <EmptyState icon="\uD83D\uDCB0" message="No loot yet." />
+        <EmptyState icon="💰" message="No loot yet." />
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
@@ -50,7 +50,7 @@ export default function LootPage() {
                   <td className="p-3 text-text-muted font-mono text-xs">{l.source}</td>
                   <td className="p-3 text-text-secondary text-sm">{l.holder || '\u2014'}</td>
                   <td className="p-3">
-                    <button onClick={(e) => { e.stopPropagation(); setDeleteId(l.id); }} className="text-text-muted hover:text-accent-red text-xs font-mono">\u2715</button>
+                    <button onClick={(e) => { e.stopPropagation(); setDeleteId(l.id); }} className="text-text-muted hover:text-accent-red text-xs font-mono">✕</button>
                   </td>
                 </tr>
               ))}

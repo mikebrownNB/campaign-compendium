@@ -377,7 +377,7 @@ export default function MapPage() {
                                 hover:scale-125 transition-transform duration-150 cursor-pointer
                                 ${pinColor(marker)}`}>
                   {marker.location_id
-                    ? <span className="text-[10px] text-deep font-bold leading-none">\uD83D\uDCCD</span>
+                    ? <span className="text-[10px] text-deep font-bold leading-none">📍</span>
                     : <div className="w-2.5 h-2.5 rounded-full bg-deep" />
                   }
                 </div>
@@ -437,7 +437,7 @@ export default function MapPage() {
           <button onClick={fitMap} title="Fit to screen"
             className="px-2.5 py-1.5 rounded text-xs font-mono bg-card/90 backdrop-blur-sm
                        text-text-muted hover:text-text-primary border border-border-subtle shadow-lg transition-colors">
-            \u22A1
+            ⊡
           </button>
           <button onClick={() => zoomCenter(1.25)} title="Zoom in"
             className="w-7 h-7 rounded text-sm font-mono bg-card/90 backdrop-blur-sm
@@ -447,7 +447,7 @@ export default function MapPage() {
           <button onClick={() => zoomCenter(0.8)} title="Zoom out"
             className="w-7 h-7 rounded text-sm font-mono bg-card/90 backdrop-blur-sm
                        text-text-muted hover:text-text-primary border border-border-subtle shadow-lg transition-colors">
-            \u2212
+            −
           </button>
           <span className="px-2 py-1 bg-card/80 backdrop-blur-sm border border-border-subtle
                            rounded text-[10px] font-mono text-text-muted shadow min-w-[3.5rem] text-center">
@@ -477,13 +477,13 @@ export default function MapPage() {
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20
                          px-5 py-2.5 bg-accent-gold text-deep text-xs font-mono font-bold
                          rounded-full shadow-xl pointer-events-none animate-pulse">
-            Click anywhere on the map to drop a pin \u2014 ESC to cancel
+            Click anywhere on the map to drop a pin — ESC to cancel
           </div>
         )}
 
         {!imgLoaded && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <p className="text-text-muted font-mono text-sm">Loading map\u2026</p>
+            <p className="text-text-muted font-mono text-sm">Loading map…</p>
           </div>
         )}
       </div>
