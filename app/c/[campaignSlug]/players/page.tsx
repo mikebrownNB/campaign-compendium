@@ -128,7 +128,7 @@ export default function PlayersPage() {
                     <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-accent-gold to-accent-purple opacity-0 group-hover:opacity-100 transition-opacity" />
 
                     {/* Avatar */}
-                    <div className="mb-3 flex items-center justify-center w-16 h-16 rounded-full overflow-hidden border-2 border-accent-gold/20 bg-deep">
+                    <div className="mb-3 flex items-center justify-center w-[75px] h-[75px] rounded overflow-hidden border border-accent-gold/20 bg-deep">
                       {isLoading ? (
                         <span className="text-text-muted animate-pulse text-xl">🎲</span>
                       ) : avatarUrl ? (
