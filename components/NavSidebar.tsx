@@ -51,9 +51,10 @@ export function NavSidebar() {
     router.refresh();
   };
 
-  const isAdmin     = user?.app_metadata?.role === 'admin' || user?.app_metadata?.role === 'super_admin';
-  const displayName = (user?.user_metadata?.display_name as string) ?? '';
-  const emailLabel  = user?.email ?? '';
+  const isAdmin      = user?.app_metadata?.role === 'admin' || user?.app_metadata?.role === 'super_admin';
+  const isSuperAdmin = user?.app_metadata?.role === 'super_admin';
+  const displayName  = (user?.user_metadata?.display_name as string) ?? '';
+  const emailLabel   = user?.email ?? '';
   const tagline     = campaign.settings?.tagline;
 
   return (
@@ -143,6 +144,18 @@ export function NavSidebar() {
             >
               <span className="text-base">🛡️</span>
               Users
+            </Link>
+          )}
+
+          {/* Campaigns — super admin only */}
+          {isSuperAdmin && (
+            <Link
+              href="/admin/campaigns"
+              onClick={() => setOpen(false)}
+              className={`${linkBase} ${pathname === '/admin/campaigns' ? linkActive : linkIdle}`}
+            >
+              <span className="text-base">🗺️</span>
+              Campaigns
             </Link>
           )}
 

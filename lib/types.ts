@@ -5,7 +5,7 @@ export interface Campaign {
   slug: string;
   subtitle: string;
   description: string;
-  owner_id: string;
+  owner_id: string | null;
   settings: CampaignSettings;
   created_at?: string;
   updated_at?: string;
