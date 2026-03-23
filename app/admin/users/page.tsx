@@ -27,6 +27,7 @@ export default function UsersPage() {
   const [saving,     setSaving]     = useState(false);
   const [error,      setError]      = useState<string | null>(null);
   const [success,    setSuccess]    = useState<string | null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -38,8 +39,10 @@ export default function UsersPage() {
   useEffect(() => {
     const supabase = getSupabaseBrowser();
     supabase.auth.getUser().then(({ data }) => {
-      if (data.user?.app_metadata?.role === 'admin') {
+      const role = data.user?.app_metadata?.role;
+      if (role === 'admin' || role === 'super_admin') {
         setIsAdmin(true);
+        setIsSuperAdmin(role === 'super_admin');
         loadUsers();
       } else {
         setLoading(false);
@@ -158,7 +161,9 @@ export default function UsersPage() {
                     {u.email || <span className="text-text-muted italic">—</span>}
                   </td>
                   <td className="px-4 py-3 hidden md:table-cell">
-                    {u.role === 'admin' ? (
+                    {u.role === 'super_admin' ? (
+                      <span className="font-mono text-[0.6rem] text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-2 py-0.5">Super Admin</span>
+                    ) : u.role === 'admin' ? (
                       <span className="font-mono text-[0.6rem] text-accent-gold bg-accent-gold/10 border border-accent-gold/30 rounded px-2 py-0.5">Admin</span>
                     ) : (
                       <span className="font-mono text-[0.6rem] text-text-muted">Member</span>
@@ -210,7 +215,7 @@ export default function UsersPage() {
               className="bg-[#0a0a12] border border-border-subtle rounded-lg px-3 py-2 text-sm text-text-primary font-mono focus:outline-none focus:border-accent-gold/50 transition-colors"
             >
               <option value="member">Member</option>
-              <option value="admin">Admin</option>
+              {isSuperAdmin && <option value="admin">Admin</option>}
             </select>
           </div>
           {error && (

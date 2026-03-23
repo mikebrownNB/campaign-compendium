@@ -51,7 +51,7 @@ export function NavSidebar() {
     router.refresh();
   };
 
-  const isAdmin     = user?.app_metadata?.role === 'admin';
+  const isAdmin     = user?.app_metadata?.role === 'admin' || user?.app_metadata?.role === 'super_admin';
   const displayName = (user?.user_metadata?.display_name as string) ?? '';
   const emailLabel  = user?.email ?? '';
   const tagline     = campaign.settings?.tagline;
