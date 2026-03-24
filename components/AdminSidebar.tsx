@@ -103,7 +103,7 @@ export function AdminSidebar() {
             className={`${linkBase} text-text-muted hover:text-accent-purple hover:bg-card`}
           >
             <span className="text-base">↩</span>
-            Back to Campaigns
+            Manage My Campaigns
           </Link>
         </nav>
 
