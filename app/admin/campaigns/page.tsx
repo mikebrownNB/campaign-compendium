@@ -35,6 +35,8 @@ export default function AdminCampaignsPage() {
   const [users,        setUsers]        = useState<AdminUser[]>([]);
   const [newOwnerId,   setNewOwnerId]   = useState<string>('');
   const [saving,       setSaving]       = useState(false);
+  const [migrating,    setMigrating]    = useState(false);
+  const [migrateResult, setMigrateResult] = useState<{ counts: Record<string, number> } | null>(null);
 
   const loadCampaigns = useCallback(async () => {
     setLoading(true);
@@ -103,6 +105,20 @@ export default function AdminCampaignsPage() {
     }
   };
 
+  const handleMigrate = async () => {
+    setMigrating(true);
+    setMigrateResult(null);
+    const res = await fetch('/api/admin/migrate-pf-dossier', { method: 'POST' });
+    const body = await res.json();
+    setMigrating(false);
+    if (res.ok) {
+      setMigrateResult(body);
+      await loadCampaigns();
+    } else {
+      flash(body.error ?? 'Migration failed.', 'err');
+    }
+  };
+
   const handleDelete = async () => {
     if (!selected) return;
     const res = await fetch(`/api/admin/campaigns?id=${selected.id}`, { method: 'DELETE' });
@@ -119,6 +135,36 @@ export default function AdminCampaignsPage() {
   return (
     <div className="animate-fade-in">
       <PageHeader icon="library_books" title="All Campaigns" />
+
+      {/* ── pf-dossier migration ── */}
+      <div className="mb-6 bg-card border border-border-subtle rounded-xl p-4 flex items-start gap-4">
+        <Icon name="move_down" className="text-2xl text-accent-purple shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0">
+          <p className="font-display text-sm font-bold text-text-primary mb-0.5">Import from pf-dossier</p>
+          <p className="font-mono text-[0.65rem] text-text-muted leading-relaxed">
+            Creates the <span className="text-accent-gold">Volitaire Petrius</span> campaign and imports all locations, NPCs,
+            factions, loot, sessions, threads, calendar events, and map markers from the pf-dossier project.
+            Safe to run multiple times (idempotent).
+            Requires <code className="bg-deep px-1 rounded">PF_SUPABASE_URL</code> and{' '}
+            <code className="bg-deep px-1 rounded">PF_SUPABASE_ANON_KEY</code> env vars in Vercel.
+          </p>
+          {migrateResult && (
+            <div className="mt-2 font-mono text-[0.65rem] text-green-400 bg-green-400/10 border border-green-400/30 rounded px-3 py-2">
+              <Icon name="check_circle" className="text-sm align-middle" />{' '}
+              Migration complete —{' '}
+              {Object.entries(migrateResult.counts).map(([k, v]) => `${v} ${k}`).join(', ')}
+            </div>
+          )}
+        </div>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={handleMigrate}
+          disabled={migrating}
+        >
+          {migrating ? 'Importing…' : 'Run Import'}
+        </Button>
+      </div>
 
       {success && (
         <p className="mb-4 font-mono text-[0.65rem] text-green-400 bg-green-400/10 border border-green-400/30 rounded px-3 py-2">
