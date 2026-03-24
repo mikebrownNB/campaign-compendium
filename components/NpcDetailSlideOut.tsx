@@ -5,6 +5,7 @@ import type { NPC } from '@/lib/types';
 import { SlideOut, SlideOutSection } from '@/components/SlideOut';
 import { Tag, Button, Input, Textarea } from '@/components/UI';
 import { useCampaignCrud } from '@/lib/useCampaignCrud';
+import { Icon } from '@/components/Icon';
 
 interface Props {
   npc: NPC | null;
@@ -78,7 +79,7 @@ export function NpcDetailSlideOut({ npc, onClose, onUpdated, layer = 1 }: Props)
             </div>
           ) : (
             <Button size="sm" variant="secondary" onClick={() => setEditing(true)}>
-              ✎ Edit
+              <Icon name="edit" className="text-sm" /> Edit
             </Button>
           )
         ) : undefined
@@ -133,13 +134,13 @@ export function NpcDetailSlideOut({ npc, onClose, onUpdated, layer = 1 }: Props)
             {/* Location */}
             {npc.location && (
               <div className="flex items-center gap-2 mb-5 font-mono text-xs text-accent-blue">
-                <span>📍</span>
+                <Icon name="location_on" className="text-sm" />
                 <span>{npc.location}</span>
               </div>
             )}
 
             {/* Description */}
-            <SlideOutSection icon="📖" title="Description">
+            <SlideOutSection icon="menu_book" title="Description">
               <p className="text-text-secondary text-sm leading-relaxed whitespace-pre-wrap">
                 {npc.description || <span className="text-text-muted italic">No description recorded.</span>}
               </p>

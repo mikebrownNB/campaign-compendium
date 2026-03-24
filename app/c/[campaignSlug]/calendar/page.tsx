@@ -8,6 +8,7 @@ import type { CalendarEvent, EventType } from '@/lib/types';
 import { EVENT_TYPES, getCalendarConfig } from '@/lib/types';
 import { PageHeader, Button, Input, Textarea, Select, ConfirmDelete } from '@/components/UI';
 import { Modal } from '@/components/Modal';
+import { Icon } from '@/components/Icon';
 
 const EVENT_COLORS: Record<string, string> = {
   combat:   'bg-accent-red/30 border-l-2 border-l-accent-red',
@@ -157,7 +158,7 @@ export default function CalendarPage() {
 
   return (
     <div className="animate-fade-in">
-      <PageHeader icon="📅" title="Calendar">
+      <PageHeader icon="calendar_month" title="Calendar">
         <Button onClick={() => openCreate()}>+ New Event</Button>
       </PageHeader>
 
@@ -165,7 +166,7 @@ export default function CalendarPage() {
       {mounted && (
         <div className="flex items-center justify-between gap-3 mb-5 px-4 py-2.5 bg-gradient-to-r from-accent-gold/10 to-accent-purple/10 border border-accent-gold/20 rounded-lg">
           <div className="flex items-center gap-3 min-w-0">
-            <span className="text-accent-gold text-lg flex-shrink-0">📍</span>
+            <Icon name="location_on" className="text-accent-gold text-lg flex-shrink-0" />
             <div className="min-w-0">
               <p className="font-mono text-[0.6rem] text-text-muted uppercase tracking-wider">Current Campaign Date</p>
               <p className="font-display text-sm font-bold text-text-primary leading-tight">
@@ -366,7 +367,7 @@ export default function CalendarPage() {
         </div>
         {dateError && (
           <p className="mt-3 font-mono text-xs text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-3 py-2">
-            ✕ Save failed: {dateError}
+            <Icon name="close" className="text-sm align-middle" /> Save failed: {dateError}
           </p>
         )}
         <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border-subtle">

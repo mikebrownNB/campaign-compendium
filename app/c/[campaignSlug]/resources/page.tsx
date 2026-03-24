@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, type ReactNode } from 'react';
 import Image from 'next/image';
 import { PageHeader, Button, Input } from '@/components/UI';
+import { Icon } from '@/components/Icon';
 import { Modal } from '@/components/Modal';
 import { useCampaign } from '@/lib/CampaignContext';
 import { useCampaignCrud } from '@/lib/useCampaignCrud';
@@ -21,7 +22,11 @@ interface Resource {
 
 type ResourceType = 'pdf' | 'image' | 'link';
 
-const TYPE_ICONS: Record<ResourceType, string> = { pdf: '📄', image: '🖼️', link: '🔗' };
+const TYPE_ICONS: Record<ResourceType, ReactNode> = {
+  pdf:   <Icon name="description" className="text-base" />,
+  image: <Icon name="image" className="text-base" />,
+  link:  <Icon name="link" className="text-base" />,
+};
 
 const emptyForm = { name: '', description: '', type: 'pdf' as ResourceType, url: '' };
 
@@ -103,7 +108,7 @@ export default function ResourcesPage() {
 
   return (
     <div className="animate-fade-in flex flex-col" style={{ height: 'calc(100vh - 4rem)' }}>
-      <PageHeader icon="📚" title="Reference Library">
+      <PageHeader icon="library_books" title="Reference Library">
         {isDM && (
           <Button onClick={openModal}>+ Add Resource</Button>
         )}
@@ -144,7 +149,7 @@ export default function ResourcesPage() {
                       className="absolute -top-1.5 -right-1 z-20 opacity-0 group-hover/tab:opacity-100 transition-opacity
                                  font-mono text-[0.55rem] text-text-muted hover:text-accent-red bg-card rounded px-1 py-0.5 border border-border-subtle"
                     >
-                      ✕
+                      <Icon name="close" className="text-xs" />
                     </button>
                   )}
                 </div>
@@ -286,7 +291,7 @@ export default function ResourcesPage() {
           )}
 
           {error && (
-            <p className="font-mono text-[0.65rem] text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-3 py-2">✕ {error}</p>
+            <p className="font-mono text-[0.65rem] text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-3 py-2"><Icon name="close" className="text-xs inline align-middle" /> {error}</p>
           )}
         </div>
         <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border-subtle">

@@ -7,6 +7,7 @@ import type { PersonalNote, NoteUser } from '@/lib/types';
 import { PageHeader, Button, Input, Textarea, EmptyState, ConfirmDelete } from '@/components/UI';
 import { SlideOut } from '@/components/SlideOut';
 import { Modal } from '@/components/Modal';
+import { Icon } from '@/components/Icon';
 
 // ── helpers ────────────────────────────────────────────────────────────────────
 
@@ -21,27 +22,27 @@ function SharingBadge({ note }: { note: PersonalNote }) {
   if (!note.is_owner) {
     return (
       <span className="inline-flex items-center gap-1 text-[0.6rem] font-mono px-1.5 py-0.5 rounded bg-accent-teal/10 text-accent-teal border border-accent-teal/20">
-        👤 from {note.owner_name}
+        <Icon name="person" className="text-xs" /> from {note.owner_name}
       </span>
     );
   }
   if (note.shared_with_all) {
     return (
       <span className="inline-flex items-center gap-1 text-[0.6rem] font-mono px-1.5 py-0.5 rounded bg-accent-purple/10 text-accent-purple border border-accent-purple/20">
-        🌐 All members
+        <Icon name="public" className="text-xs" /> All members
       </span>
     );
   }
   if (note.shared_with.length > 0) {
     return (
       <span className="inline-flex items-center gap-1 text-[0.6rem] font-mono px-1.5 py-0.5 rounded bg-accent-gold/10 text-accent-gold border border-accent-gold/20">
-        👥 {note.shared_with.length} {note.shared_with.length === 1 ? 'person' : 'people'}
+        <Icon name="groups" className="text-xs" /> {note.shared_with.length} {note.shared_with.length === 1 ? 'person' : 'people'}
       </span>
     );
   }
   return (
     <span className="inline-flex items-center gap-1 text-[0.6rem] font-mono px-1.5 py-0.5 rounded bg-card text-text-muted border border-border-subtle">
-      🔒 Private
+      <Icon name="lock" className="text-xs" /> Private
     </span>
   );
 }
@@ -329,7 +330,7 @@ export default function NotesPage() {
   return (
     <div className="animate-fade-in">
       <PageHeader
-        icon="📓"
+        icon="edit_note"
         title="My Notes"
         subtitle={displayName ? `Notes for ${displayName}` : 'Your personal notes'}
       >
@@ -346,7 +347,7 @@ export default function NotesPage() {
               My Notes ({ownedNotes.length})
             </h2>
             {ownedNotes.length === 0 ? (
-              <EmptyState icon="📓" message="No notes yet. Add your first one!" />
+              <EmptyState icon="edit_note" message="No notes yet. Add your first one!" />
             ) : (
               <div className="flex flex-col gap-2">
                 {ownedNotes.map((note) => <NoteCard key={note.id} note={note} />)}
@@ -407,7 +408,7 @@ export default function NotesPage() {
 
           {saveError && (
             <p className="font-mono text-[0.65rem] text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-3 py-2">
-              ✕ {saveError}
+              <Icon name="close" className="text-sm align-middle" /> {saveError}
             </p>
           )}
 

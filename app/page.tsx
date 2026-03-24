@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader, Button, Input, Textarea } from '@/components/UI';
+import { Icon } from '@/components/Icon';
 import type { Campaign } from '@/lib/types';
 
 export default function CampaignSelectionPage() {
@@ -57,7 +58,7 @@ export default function CampaignSelectionPage() {
       </div>
 
       <div className="flex items-center justify-between mb-6">
-        <PageHeader icon="📚" title="My Campaigns" />
+        <PageHeader icon="library_books" title="My Campaigns" />
         <Button onClick={() => setShowCreate(true)}>+ New Campaign</Button>
       </div>
 
@@ -106,7 +107,7 @@ export default function CampaignSelectionPage() {
         <p className="text-text-muted text-center py-8">Loading campaigns...</p>
       ) : campaigns.length === 0 ? (
         <div className="text-center py-16 text-text-muted">
-          <span className="text-4xl block mb-3">📚</span>
+          <Icon name="library_books" className="text-4xl block mb-3" />
           <p className="font-body text-sm">No campaigns yet. Create your first one!</p>
         </div>
       ) : (

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { Icon } from '@/components/Icon';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 const DICE = [4, 6, 8, 10, 12, 20, 100] as const;
@@ -145,7 +146,7 @@ export function DiceRollerDrawer() {
           <button
             onClick={() => setOpen(false)}
             className="text-text-muted hover:text-text-primary transition-colors text-lg leading-none"
-          >×</button>
+          ><Icon name="close" className="text-lg" /></button>
         </div>
 
         <div className="p-4 flex flex-col gap-4">
@@ -234,7 +235,7 @@ export function DiceRollerDrawer() {
                          tracking-widest text-accent-gold uppercase hover:bg-accent-gold/20
                          disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95"
             >
-              🎲 Roll
+              <Icon name="casino" className="text-sm align-middle" /> Roll
             </button>
           </div>
 

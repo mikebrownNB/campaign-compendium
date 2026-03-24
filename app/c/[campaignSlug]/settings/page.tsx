@@ -6,6 +6,7 @@ import { useCampaign } from '@/lib/CampaignContext';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
 import { PageHeader, Button, Input, Textarea, ConfirmDelete } from '@/components/UI';
 import { Modal } from '@/components/Modal';
+import { Icon } from '@/components/Icon';
 import type { CampaignMap, WidgetConfig } from '@/lib/types';
 
 export default function CampaignSettingsPage() {
@@ -23,7 +24,7 @@ export default function CampaignSettingsPage() {
   if (!isDM) {
     return (
       <div className="animate-fade-in text-center py-16">
-        <span className="text-4xl block mb-3">🔒</span>
+        <Icon name="lock" className="text-4xl block mb-3" />
         <p className="text-text-muted">Only the DM can access campaign settings.</p>
       </div>
     );
@@ -40,7 +41,7 @@ function SettingsContent({ campaign, initialMaps, isOwner }: { campaign: any; in
 
   return (
     <div className="animate-fade-in max-w-3xl">
-      <PageHeader icon="🛠️" title="Campaign Settings" subtitle={campaign.name} />
+      <PageHeader icon="settings_applications" title="Campaign Settings" subtitle={campaign.name} />
 
       {/* Tabs */}
       <div className="flex gap-1 mb-6 border-b border-border-subtle pb-px">
@@ -162,7 +163,7 @@ function GeneralTab({ campaign, isOwner }: { campaign: any; isOwner: boolean }) 
         />
         {deleteError && (
           <p className="mt-2 font-mono text-xs text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-3 py-2">
-            ✕ {deleteError}
+            <Icon name="close" className="text-sm align-middle" /> {deleteError}
           </p>
         )}
         <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border-subtle">
@@ -381,7 +382,7 @@ function MapsTab({ campaignId, initialMaps }: { campaignId: string; initialMaps:
             )}
           </div>
           {uploadError && (
-            <p className="font-mono text-[0.65rem] text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-3 py-2 mb-2">✕ {uploadError}</p>
+            <p className="font-mono text-[0.65rem] text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-3 py-2 mb-2"><Icon name="close" className="text-sm align-middle" /> {uploadError}</p>
           )}
           <div className="flex gap-2 mt-2">
             <Button size="sm" onClick={handleAdd} disabled={uploading}>{uploading ? 'Uploading…' : 'Add Map'}</Button>

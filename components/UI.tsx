@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { Icon } from '@/components/Icon';
 
 // ===== Page Header =====
 export function PageHeader({ icon, title, subtitle, children }: { icon: string; title: string; subtitle?: string; children?: React.ReactNode }) {
@@ -8,7 +9,7 @@ export function PageHeader({ icon, title, subtitle, children }: { icon: string; 
     <div className="flex items-center justify-between flex-wrap gap-4 mb-8 pb-4 border-b-2 border-border-subtle">
       <div>
         <h2 className="font-display text-2xl font-bold text-accent-gold flex items-center gap-3 tracking-wider">
-          <span className="text-xl">{icon}</span> {title}
+          <Icon name={icon} className="text-xl" /> {title}
         </h2>
         {subtitle && <p className="font-mono text-[0.65rem] text-text-muted mt-1 ml-9">{subtitle}</p>}
       </div>
@@ -131,7 +132,7 @@ export function Card({ children, className = '', ...props }: { children: React.R
 export function EmptyState({ icon, message }: { icon: string; message: string }) {
   return (
     <div className="text-center py-16 text-text-muted">
-      <span className="text-4xl block mb-3">{icon}</span>
+      <Icon name={icon} className="text-4xl block mb-3" />
       <p className="font-body text-sm">{message}</p>
     </div>
   );

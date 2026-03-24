@@ -4,21 +4,22 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useCampaign } from '@/lib/CampaignContext';
 import { WidgetCard } from '@/components/WidgetCard';
+import { Icon } from '@/components/Icon';
 
 export default function CampaignDashboardPage() {
   const { campaign, isDM } = useCampaign();
   const base = `/c/${campaign.slug}`;
 
   const SECTIONS = [
-    { href: `${base}/threads`,   icon: '🧵', label: 'Campaign Threads', entity: 'threads',         desc: 'Active storylines and plot hooks' },
-    { href: `${base}/calendar`,  icon: '📅', label: 'Calendar',         entity: 'calendar-events',  desc: 'In-game calendar with events' },
-    { href: `${base}/factions`,  icon: '⚔️', label: 'Factions',         entity: 'factions',         desc: 'Organizations, guilds, and empires' },
-    { href: `${base}/locations`, icon: '🗺️', label: 'Locations',        entity: 'locations',        desc: 'Cities, dungeons, and points of interest' },
-    { href: `${base}/npcs`,      icon: '👥', label: 'NPCs',             entity: 'npcs',             desc: 'People and creatures of note' },
-    { href: `${base}/players`,   icon: '🎲', label: 'Player Characters', entity: '',                desc: 'Party character sheets' },
-    { href: `${base}/loot`,      icon: '💰', label: 'Loot & Items',     entity: 'loot-items',       desc: 'Weapons, artifacts, and treasure' },
-    { href: `${base}/sessions`,  icon: '📜', label: 'Session Log',      entity: 'sessions',         desc: 'Record of each game session' },
-    { href: `${base}/resources`, icon: '📚', label: 'Reference Library', entity: '',                desc: 'Rulebooks, supplements & resources' },
+    { href: `${base}/threads`,   icon: 'forum',         label: 'Campaign Threads', entity: 'threads',         desc: 'Active storylines and plot hooks' },
+    { href: `${base}/calendar`,  icon: 'calendar_month', label: 'Calendar',         entity: 'calendar-events',  desc: 'In-game calendar with events' },
+    { href: `${base}/factions`,  icon: 'swords',        label: 'Factions',         entity: 'factions',         desc: 'Organizations, guilds, and empires' },
+    { href: `${base}/locations`, icon: 'pin_drop',      label: 'Locations',        entity: 'locations',        desc: 'Cities, dungeons, and points of interest' },
+    { href: `${base}/npcs`,      icon: 'groups',        label: 'NPCs',             entity: 'npcs',             desc: 'People and creatures of note' },
+    { href: `${base}/players`,   icon: 'person_play',   label: 'Player Characters', entity: '',                desc: 'Party character sheets' },
+    { href: `${base}/loot`,      icon: 'paid',          label: 'Loot & Items',     entity: 'loot-items',       desc: 'Weapons, artifacts, and treasure' },
+    { href: `${base}/sessions`,  icon: 'history_edu',   label: 'Session Log',      entity: 'sessions',         desc: 'Record of each game session' },
+    { href: `${base}/resources`, icon: 'library_books', label: 'Reference Library', entity: '',                desc: 'Rulebooks, supplements & resources' },
   ];
 
   const [counts, setCounts] = useState<Record<string, number>>({});
@@ -71,7 +72,7 @@ export default function CampaignDashboardPage() {
             <div className="bg-card border border-border-subtle rounded-lg p-5 transition-all duration-300 hover:bg-card-hover hover:border-border-glow hover:-translate-y-1 hover:shadow-lg hover:shadow-accent-purple/10 relative overflow-hidden h-full">
               <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-accent-purple to-accent-gold opacity-0 group-hover:opacity-100 transition-opacity" />
               <div className="flex items-start justify-between mb-3">
-                <span className="text-2xl">{s.icon}</span>
+                <Icon name={s.icon} className="text-2xl" />
                 <span className="font-mono text-sm text-accent-gold font-bold">
                   {!s.entity ? '—' : loading ? '...' : (counts[s.entity] ?? 0)}
                 </span>

@@ -96,14 +96,14 @@ export default function ThreadsPage() {
 
   return (
     <div className="animate-fade-in">
-      <PageHeader icon="🧵" title="Campaign Threads">
+      <PageHeader icon="forum" title="Campaign Threads">
         <Button onClick={openCreate}>+ New Thread</Button>
       </PageHeader>
 
       {loading ? (
         <p className="text-text-muted font-mono text-sm">Loading...</p>
       ) : items.length === 0 ? (
-        <EmptyState icon="🧵" message="No threads yet. Create your first campaign thread." />
+        <EmptyState icon="forum" message="No threads yet. Create your first campaign thread." />
       ) : (
         <div className="flex flex-col gap-3">
           {items.map((t) => (

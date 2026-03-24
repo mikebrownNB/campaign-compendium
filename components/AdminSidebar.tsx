@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
+import { Icon } from '@/components/Icon';
 import type { User } from '@supabase/supabase-js';
 
 const linkBase  = 'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 font-display text-xs tracking-[0.08em] uppercase';
@@ -70,7 +71,7 @@ export function AdminSidebar() {
             onClick={() => setOpen(false)}
             className={`${linkBase} ${pathname === '/admin/users' ? linkActive : linkIdle}`}
           >
-            <span className="text-base">🛡️</span>
+            <Icon name="shield_person" className="text-base" />
             Users
           </Link>
 
@@ -80,7 +81,7 @@ export function AdminSidebar() {
               onClick={() => setOpen(false)}
               className={`${linkBase} ${pathname === '/admin/campaigns' ? linkActive : linkIdle}`}
             >
-              <span className="text-base">🗺️</span>
+              <Icon name="library_books" className="text-base" />
               Campaigns
             </Link>
           )}
@@ -93,7 +94,7 @@ export function AdminSidebar() {
             onClick={() => setOpen(false)}
             className={`${linkBase} ${pathname === '/account' ? linkActive : linkIdle}`}
           >
-            <span className="text-base">⚙️</span>
+            <Icon name="settings" className="text-base" />
             Account
           </Link>
 
@@ -102,7 +103,7 @@ export function AdminSidebar() {
             onClick={() => setOpen(false)}
             className={`${linkBase} text-text-muted hover:text-accent-purple hover:bg-card`}
           >
-            <span className="text-base">↩</span>
+            <Icon name="arrow_back" className="text-base" />
             Manage My Campaigns
           </Link>
         </nav>
@@ -120,7 +121,7 @@ export function AdminSidebar() {
             disabled={signingOut}
             className="w-full text-left flex items-center gap-2 font-mono text-[0.65rem] text-text-muted hover:text-accent-red transition-colors disabled:opacity-50"
           >
-            <span>→</span>
+            <Icon name="logout" className="text-sm" />
             {signingOut ? 'Signing out...' : 'Log Out'}
           </button>
         </div>

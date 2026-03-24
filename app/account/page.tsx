@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
+import { Icon } from '@/components/Icon';
 import type { User } from '@supabase/supabase-js';
 
 const inputClass =
@@ -18,7 +19,7 @@ function Flash({ msg }: { msg: { type: 'ok' | 'err'; text: string } | null }) {
         ? 'text-green-400 bg-green-400/10 border-green-400/30'
         : 'text-accent-red bg-accent-red/10 border-accent-red/30'
     }`}>
-      {msg.type === 'ok' ? '✓' : '✕'} {msg.text}
+      <Icon name={msg.type === 'ok' ? 'check_circle' : 'close'} className="text-sm align-middle" /> {msg.text}
     </p>
   );
 }

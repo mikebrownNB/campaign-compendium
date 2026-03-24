@@ -7,6 +7,7 @@ import { PageHeader, Button, Tag, Input, Textarea, EmptyState, ConfirmDelete } f
 import { Modal } from '@/components/Modal';
 import { SlideOut, SlideOutSection } from '@/components/SlideOut';
 import { NpcDetailSlideOut } from '@/components/NpcDetailSlideOut';
+import { Icon } from '@/components/Icon';
 import Link from 'next/link';
 
 const emptyFaction = { name: '', status: '', description: '', tags: [] as string[] };
@@ -105,12 +106,12 @@ export default function FactionsPage() {
 
   return (
     <div className="animate-fade-in">
-      <PageHeader icon="⚔️" title="Factions">
+      <PageHeader icon="swords" title="Factions">
         <Button onClick={openCreate}>+ New Faction</Button>
       </PageHeader>
 
       {loading ? <p className="text-text-muted font-mono text-sm">Loading...</p> : factions.length === 0 ? (
-        <EmptyState icon="⚔️" message="No factions yet." />
+        <EmptyState icon="swords" message="No factions yet." />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {factions.map((f) => {
@@ -140,7 +141,7 @@ export default function FactionsPage() {
                   </div>
                   {/* Quick stats */}
                   <div className="flex gap-3 text-text-muted font-mono text-[0.6rem]">
-                    <span title="Related NPCs">👥 {npcs.filter(n => (n.faction || '').toLowerCase().includes(f.name.toLowerCase().split(' ')[0])).length}</span>
+                    <span title="Related NPCs" className="flex items-center gap-1"><Icon name="groups" className="text-sm" /> {npcs.filter(n => (n.faction || '').toLowerCase().includes(f.name.toLowerCase().split(' ')[0])).length}</span>
                   </div>
                 </div>
               </div>
@@ -181,7 +182,7 @@ export default function FactionsPage() {
 
             {/* ===== Related NPCs ===== */}
             <SlideOutSection
-              icon="👥"
+              icon="groups"
               title={`Known Members & Contacts (${relatedData.npcs.length})`}
               empty={relatedData.npcs.length === 0 ? 'No known NPCs linked to this faction.' : undefined}
             >
@@ -195,7 +196,7 @@ export default function FactionsPage() {
                   >
                     <div className="w-8 h-8 rounded-full bg-accent-teal/10 border border-accent-teal/20
                                   flex items-center justify-center shrink-0 text-sm">
-                      👤
+                      <Icon name="person" className="text-sm" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -205,7 +206,7 @@ export default function FactionsPage() {
                         <Tag variant="npc">{n.role}</Tag>
                       </div>
                       {n.location && (
-                        <p className="font-mono text-[0.6rem] text-text-muted mt-0.5">📍 {n.location}</p>
+                        <p className="font-mono text-[0.6rem] text-text-muted mt-0.5 flex items-center gap-0.5"><Icon name="location_on" className="text-xs" /> {n.location}</p>
                       )}
                       <p className="text-text-secondary text-xs mt-1 line-clamp-2">{n.description}</p>
                     </div>
@@ -216,7 +217,7 @@ export default function FactionsPage() {
 
             {/* ===== Related Threads ===== */}
             <SlideOutSection
-              icon="🧵"
+              icon="forum"
               title={`Active Threads (${relatedData.threads.length})`}
               empty={relatedData.threads.length === 0 ? 'No active threads involving this faction.' : undefined}
             >
@@ -251,7 +252,7 @@ export default function FactionsPage() {
 
             {/* ===== Related Locations ===== */}
             <SlideOutSection
-              icon="🗺️"
+              icon="pin_drop"
               title={`Known Locations (${relatedData.locations.length})`}
               empty={relatedData.locations.length === 0 ? 'No locations directly linked to this faction.' : undefined}
             >
@@ -265,7 +266,7 @@ export default function FactionsPage() {
                   >
                     <div className="w-8 h-8 rounded-full bg-accent-blue/10 border border-accent-blue/20
                                   flex items-center justify-center shrink-0 text-sm">
-                      📍
+                      <Icon name="location_on" className="text-sm" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">

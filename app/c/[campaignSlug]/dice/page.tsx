@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { PageHeader } from '@/components/UI';
+import { Icon } from '@/components/Icon';
 
 const DICE = [2, 4, 6, 8, 10, 12, 20, 100] as const;
 type Die = (typeof DICE)[number];
@@ -87,7 +88,7 @@ export default function DiceRollerPage() {
 
   return (
     <div className="animate-fade-in max-w-2xl">
-      <PageHeader icon="🎲" title="Dice Roller" />
+      <PageHeader icon="casino" title="Dice Roller" />
 
       {/* \u2500\u2500 Die buttons \u2500\u2500 */}
       <div className="grid grid-cols-4 gap-3 mb-5">
@@ -170,7 +171,7 @@ export default function DiceRollerPage() {
                      text-accent-gold uppercase hover:bg-accent-gold/20 disabled:opacity-30 disabled:cursor-not-allowed
                      transition-all active:scale-95"
         >
-          🎲 Roll
+          <Icon name="casino" className="text-sm align-middle" /> Roll
         </button>
       </div>
 

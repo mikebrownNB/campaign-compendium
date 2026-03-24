@@ -7,6 +7,7 @@ import { useCampaign } from '@/lib/CampaignContext';
 import type { MapMarker, GameLocation } from '@/lib/types';
 import { useCampaignCrud } from '@/lib/useCampaignCrud';
 import { Button, Input, Textarea, Select } from '@/components/UI';
+import { Icon } from '@/components/Icon';
 import { Modal } from '@/components/Modal';
 import { LocationDetailSlideOut } from '@/components/LocationDetailSlideOut';
 
@@ -377,7 +378,7 @@ export default function MapPage() {
                                 hover:scale-125 transition-transform duration-150 cursor-pointer
                                 ${pinColor(marker)}`}>
                   {marker.location_id
-                    ? <span className="text-[10px] text-deep font-bold leading-none">📍</span>
+                    ? <Icon name="location_on" className="text-[10px] text-deep font-bold leading-none" />
                     : <div className="w-2.5 h-2.5 rounded-full bg-deep" />
                   }
                 </div>
@@ -431,7 +432,7 @@ export default function MapPage() {
                 ? 'bg-accent-gold text-deep ring-2 ring-accent-gold/50'
                 : 'bg-card/90 backdrop-blur-sm text-text-primary hover:bg-card border border-border-subtle'}`}
           >
-            {placing ? '\uD83D\uDDFA\uFE0F Click to Place\u2026' : '\uD83D\uDCCD Add Pin'}
+            {placing ? <><Icon name="explore" className="text-xs align-middle" /> Click to Place…</> : <><Icon name="push_pin" className="text-xs align-middle" /> Add Pin</>}
           </button>
 
           <button onClick={fitMap} title="Fit to screen"
@@ -512,8 +513,8 @@ export default function MapPage() {
           />
           <p className="text-text-muted text-[0.65rem] font-mono leading-relaxed">
             {createForm.location_id
-              ? "\uD83D\uDCCD Pin will open the selected location's detail panel."
-              : '\u2728 A new location will be created automatically and linked to this pin.'}
+              ? "Pin will open the selected location\u2019s detail panel."
+              : 'A new location will be created automatically and linked to this pin.'}
           </p>
           <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">
             <Button variant="ghost" onClick={() => setCreateOpen(false)} disabled={creating}>Cancel</Button>

@@ -6,6 +6,7 @@ import type { NPC } from '@/lib/types';
 import { PageHeader, Button, Tag, Input, Textarea, EmptyState, ConfirmDelete } from '@/components/UI';
 import { Modal } from '@/components/Modal';
 import { SlideOut } from '@/components/SlideOut';
+import { Icon } from '@/components/Icon';
 
 const empty = { name: '', role: '', faction: '', location: '', description: '', tags: [] as string[] };
 
@@ -86,7 +87,7 @@ export default function NPCsPage() {
 
   return (
     <div className="animate-fade-in">
-      <PageHeader icon="👥" title="NPCs">
+      <PageHeader icon="groups" title="NPCs">
         <div className="flex gap-2 items-center">
           <span className="font-mono text-xs text-text-muted">{processed.length} of {items.length}</span>
           <Button onClick={openCreate}>+ New NPC</Button>
@@ -96,7 +97,7 @@ export default function NPCsPage() {
       {/* Search + Filters */}
       <div className="mb-6 flex flex-col gap-3">
         <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-sm">🔍</span>
+          <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-sm" />
           <input
             className="w-full bg-card border border-border-subtle rounded-lg pl-9 pr-4 py-2.5 text-text-primary font-body text-sm focus:outline-none focus:border-accent-purple transition-colors placeholder:text-text-muted/50"
             placeholder="Search by name, role, faction, location, or description\u2026"
@@ -104,7 +105,7 @@ export default function NPCsPage() {
             onChange={(e) => setSearch(e.target.value)}
           />
           {search && (
-            <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary text-sm">✕</button>
+            <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary text-sm"><Icon name="close" className="text-sm" /></button>
           )}
         </div>
         <div className="flex gap-3 flex-wrap items-center">
@@ -132,7 +133,7 @@ export default function NPCsPage() {
       {loading ? (
         <p className="text-text-muted font-mono text-sm">Loading…</p>
       ) : processed.length === 0 ? (
-        <EmptyState icon="👥" message={search || activeFilterCount > 0 ? 'No NPCs match your filters.' : 'No NPCs yet. Create your first one.'} />
+        <EmptyState icon="groups" message={search || activeFilterCount > 0 ? 'No NPCs match your filters.' : 'No NPCs yet. Create your first one.'} />
       ) : (
         <div className="overflow-x-auto border border-border-subtle rounded-lg">
           <table className="w-full border-collapse min-w-[700px]">
@@ -180,7 +181,7 @@ export default function NPCsPage() {
                     <button
                       onClick={(e) => { e.stopPropagation(); setDeleteId(n.id); }}
                       className="text-text-muted/30 hover:text-accent-red text-xs font-mono transition-colors opacity-0 group-hover:opacity-100"
-                    >✕</button>
+                    ><Icon name="close" className="text-xs" /></button>
                   </td>
                 </tr>
               ))}

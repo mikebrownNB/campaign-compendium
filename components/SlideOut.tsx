@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
+import { Icon } from '@/components/Icon';
 
 interface SlideOutProps {
   open: boolean;
@@ -90,7 +91,7 @@ export function SlideOutSection({ icon, title, children, empty }: {
   return (
     <div className="mb-6">
       <h3 className="font-display text-sm font-bold text-text-primary tracking-wider flex items-center gap-2 mb-3 pb-2 border-b border-border-subtle">
-        <span>{icon}</span> {title}
+        <Icon name={icon} className="text-base" /> {title}
       </h3>
       {children}
       {empty && (

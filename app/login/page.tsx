@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
+import { Icon } from '@/components/Icon';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -43,7 +44,7 @@ export default function LoginPage() {
 
       <div className="relative z-10 w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="text-5xl mb-3">⚓</div>
+          <Icon name="anchor" className="text-5xl mb-3 text-accent-gold" />
           <h1 className="font-display text-2xl font-bold text-accent-gold tracking-widest uppercase">
             Campaign Compendium
           </h1>
@@ -88,7 +89,7 @@ export default function LoginPage() {
 
           {error && (
             <p className="font-mono text-[0.65rem] text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-3 py-2">
-              ✕ {error}
+              <Icon name="close" className="text-sm align-middle" /> {error}
             </p>
           )}
 

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
 import { PageHeader, Button, Input, ConfirmDelete } from '@/components/UI';
 import { Modal } from '@/components/Modal';
+import { Icon } from '@/components/Icon';
 
 interface AppUser {
   id:           string;
@@ -53,7 +54,7 @@ export default function UsersPage() {
   if (!isAdmin && !loading) {
     return (
       <div className="animate-fade-in flex flex-col items-center justify-center min-h-[40vh] gap-3">
-        <span className="text-4xl">🔒</span>
+        <Icon name="lock" className="text-4xl" />
         <p className="font-mono text-text-muted text-sm">Admin access required.</p>
       </div>
     );
@@ -120,7 +121,7 @@ export default function UsersPage() {
 
   return (
     <div className="animate-fade-in">
-      <PageHeader icon="👥" title="User Management">
+      <PageHeader icon="groups" title="User Management">
         <Button onClick={() => { setCreateForm(emptyCreate); setError(null); setModal('create'); }}>
           + New User
         </Button>
@@ -128,12 +129,12 @@ export default function UsersPage() {
 
       {success && (
         <p className="mb-4 font-mono text-[0.65rem] text-green-400 bg-green-400/10 border border-green-400/30 rounded px-3 py-2">
-          ✓ {success}
+          <Icon name="check_circle" className="text-sm align-middle" /> {success}
         </p>
       )}
       {error && !modal && (
         <p className="mb-4 font-mono text-[0.65rem] text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-3 py-2">
-          ✕ {error}
+          <Icon name="close" className="text-sm align-middle" /> {error}
         </p>
       )}
 
@@ -219,7 +220,7 @@ export default function UsersPage() {
             </select>
           </div>
           {error && (
-            <p className="font-mono text-[0.65rem] text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-3 py-2">✕ {error}</p>
+            <p className="font-mono text-[0.65rem] text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-3 py-2"><Icon name="close" className="text-sm align-middle" /> {error}</p>
           )}
         </div>
         <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border-subtle">
@@ -241,7 +242,7 @@ export default function UsersPage() {
           onChange={(e) => setTempPw(e.target.value)}
           placeholder="Min. 8 characters" />
         {error && (
-          <p className="mt-2 font-mono text-[0.65rem] text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-3 py-2">✕ {error}</p>
+          <p className="mt-2 font-mono text-[0.65rem] text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-3 py-2"><Icon name="close" className="text-sm align-middle" /> {error}</p>
         )}
         <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border-subtle">
           <Button variant="ghost" onClick={() => setModal(null)}>Cancel</Button>

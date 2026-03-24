@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { PageHeader, Button, Input } from '@/components/UI';
 import { SlideOut } from '@/components/SlideOut';
 import { Modal } from '@/components/Modal';
+import { Icon } from '@/components/Icon';
 import { useCampaignCrud } from '@/lib/useCampaignCrud';
 import { useCampaign } from '@/lib/CampaignContext';
 
@@ -94,7 +95,7 @@ export default function PlayersPage() {
 
   return (
     <div className="animate-fade-in">
-      <PageHeader icon="🎲" title="Player Characters">
+      <PageHeader icon="person_play" title="Player Characters">
         {isDM && (
           <Button onClick={() => { setForm(emptyForm); setError(null); setModal(true); }}>
             + Add Player
@@ -130,7 +131,7 @@ export default function PlayersPage() {
                     {/* Avatar */}
                     <div className="mb-3 flex items-center justify-center w-[75px] h-[75px] rounded overflow-hidden border border-accent-gold/20 bg-deep">
                       {isLoading ? (
-                        <span className="text-text-muted animate-pulse text-xl">🎲</span>
+                        <Icon name="casino" className="text-text-muted animate-pulse text-xl" />
                       ) : avatarUrl ? (
                         <img
                           src={avatarUrl}
@@ -141,7 +142,7 @@ export default function PlayersPage() {
                           }}
                         />
                       ) : (
-                        <span className="text-2xl">🎲</span>
+                        <Icon name="casino" className="text-2xl" />
                       )}
                     </div>
 
@@ -177,7 +178,7 @@ export default function PlayersPage() {
                     className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity
                                font-mono text-[0.6rem] text-text-muted hover:text-accent-red bg-card rounded px-1.5 py-0.5 border border-border-subtle"
                   >
-                    ✕
+                    <Icon name="close" className="text-xs" />
                   </button>
                 )}
               </div>
@@ -206,7 +207,7 @@ export default function PlayersPage() {
               <span className="text-accent-gold">Public</span> in D&amp;D Beyond settings.
             </p>
             {error && (
-              <p className="font-mono text-[0.65rem] text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-3 py-2">✕ {error}</p>
+              <p className="font-mono text-[0.65rem] text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-3 py-2"><Icon name="close" className="text-sm align-middle" /> {error}</p>
             )}
           </div>
           <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border-subtle">

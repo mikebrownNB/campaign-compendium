@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
 import { useCampaign } from '@/lib/CampaignContext';
+import { Icon } from '@/components/Icon';
 import type { User } from '@supabase/supabase-js';
 
 // Shared link class helpers
@@ -23,19 +24,19 @@ export function NavSidebar() {
   const base = `/c/${campaign.slug}`;
 
   const NAV_ITEMS = [
-    { href: base,                label: 'Dashboard', icon: '⚡' },
-    { href: `${base}/map`,       label: 'Map',       icon: '🗾', activePrefix: `${base}/map` },
-    { href: `${base}/threads`,   label: 'Threads',   icon: '🧵' },
-    { href: `${base}/calendar`,  label: 'Calendar',  icon: '📅' },
-    { href: `${base}/factions`,  label: 'Factions',  icon: '⚔️' },
-    { href: `${base}/locations`, label: 'Locations', icon: '🗺️' },
-    { href: `${base}/npcs`,      label: 'NPCs',      icon: '👥' },
-    { href: `${base}/players`,   label: 'Players',   icon: '🧙' },
-    { href: `${base}/loot`,      label: 'Loot',      icon: '💰' },
-    { href: `${base}/sessions`,  label: 'Sessions',  icon: '📜' },
-    { href: `${base}/resources`, label: 'Resources', icon: '📚' },
-    { href: `${base}/dice`,      label: 'Dice',      icon: '🎲' },
-    { href: `${base}/notes`,     label: 'My Notes',  icon: '📓' },
+    { href: base,                label: 'Dashboard', icon: 'dashboard' },
+    { href: `${base}/map`,       label: 'Map',       icon: 'explore', activePrefix: `${base}/map` },
+    { href: `${base}/threads`,   label: 'Threads',   icon: 'forum' },
+    { href: `${base}/calendar`,  label: 'Calendar',  icon: 'calendar_month' },
+    { href: `${base}/factions`,  label: 'Factions',  icon: 'swords' },
+    { href: `${base}/locations`, label: 'Locations', icon: 'pin_drop' },
+    { href: `${base}/npcs`,      label: 'NPCs',      icon: 'groups' },
+    { href: `${base}/players`,   label: 'Players',   icon: 'person_play' },
+    { href: `${base}/loot`,      label: 'Loot',      icon: 'paid' },
+    { href: `${base}/sessions`,  label: 'Sessions',  icon: 'history_edu' },
+    { href: `${base}/resources`, label: 'Resources', icon: 'library_books' },
+    { href: `${base}/dice`,      label: 'Dice',      icon: 'casino' },
+    { href: `${base}/notes`,     label: 'My Notes',  icon: 'edit_note' },
   ];
 
   useEffect(() => {
@@ -104,7 +105,7 @@ export function NavSidebar() {
                 onClick={() => setOpen(false)}
                 className={`${linkBase} ${isActive ? linkActive : linkIdle}`}
               >
-                <span className="text-base">{item.icon}</span>
+                <Icon name={item.icon} className="text-base" />
                 {item.label}
               </Link>
             );
@@ -120,7 +121,7 @@ export function NavSidebar() {
               onClick={() => setOpen(false)}
               className={`${linkBase} ${pathname === `${base}/settings` ? linkActive : linkIdle}`}
             >
-              <span className="text-base">🛠️</span>
+              <Icon name="settings_applications" className="text-base" />
               Campaign Settings
             </Link>
           )}
@@ -131,7 +132,7 @@ export function NavSidebar() {
             onClick={() => setOpen(false)}
             className={`${linkBase} ${pathname === '/account' ? linkActive : linkIdle}`}
           >
-            <span className="text-base">⚙️</span>
+            <Icon name="settings" className="text-base" />
             Account
           </Link>
 
@@ -142,7 +143,7 @@ export function NavSidebar() {
               onClick={() => setOpen(false)}
               className={`${linkBase} ${pathname === '/admin/users' ? linkActive : linkIdle}`}
             >
-              <span className="text-base">🛡️</span>
+              <Icon name="shield_person" className="text-base" />
               Users
             </Link>
           )}
@@ -154,7 +155,7 @@ export function NavSidebar() {
               onClick={() => setOpen(false)}
               className={`${linkBase} ${pathname === '/admin/campaigns' ? linkActive : linkIdle}`}
             >
-              <span className="text-base">🗺️</span>
+              <Icon name="library_books" className="text-base" />
               Campaigns
             </Link>
           )}
@@ -165,7 +166,7 @@ export function NavSidebar() {
             onClick={() => setOpen(false)}
             className={`${linkBase} text-text-muted hover:text-accent-purple hover:bg-card`}
           >
-            <span className="text-base">↩</span>
+            <Icon name="arrow_back" className="text-base" />
             Switch Campaign
           </Link>
         </nav>
@@ -183,7 +184,7 @@ export function NavSidebar() {
             disabled={signingOut}
             className="w-full text-left flex items-center gap-2 font-mono text-[0.65rem] text-text-muted hover:text-accent-red transition-colors disabled:opacity-50"
           >
-            <span>→</span>
+            <Icon name="logout" className="text-sm" />
             {signingOut ? 'Signing out...' : 'Log Out'}
           </button>
           {tagline && (

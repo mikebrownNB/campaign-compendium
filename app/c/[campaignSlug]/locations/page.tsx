@@ -26,14 +26,14 @@ export default function LocationsPage() {
 
   return (
     <div className="animate-fade-in">
-      <PageHeader icon="🗺️" title="Locations">
+      <PageHeader icon="pin_drop" title="Locations">
         <Button onClick={() => { setCreateForm(empty); setCreateOpen(true); }}>+ New Location</Button>
       </PageHeader>
 
       {loading ? (
         <p className="text-text-muted font-mono text-sm">Loading...</p>
       ) : items.length === 0 ? (
-        <EmptyState icon="🗺️" message="No locations yet." />
+        <EmptyState icon="pin_drop" message="No locations yet." />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {items.map((l) => (

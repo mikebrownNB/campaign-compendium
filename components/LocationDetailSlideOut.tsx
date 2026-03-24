@@ -7,6 +7,7 @@ import { Tag, Button, Input, Textarea } from '@/components/UI';
 import { NpcDetailSlideOut } from '@/components/NpcDetailSlideOut';
 import { FactionDetailSlideOut } from '@/components/FactionDetailSlideOut';
 import { useCampaignCrud } from '@/lib/useCampaignCrud';
+import { Icon } from '@/components/Icon';
 
 const STATUS_DOT: Record<string, string> = {
   urgent:   'bg-accent-red animate-pulse-glow',
@@ -144,10 +145,10 @@ export function LocationDetailSlideOut({
                 )}
                 {onEditPin && (
                   <Button size="sm" variant="ghost" onClick={onEditPin} title="Edit map pin">
-                    📍 Pin
+                    <Icon name="location_on" className="text-sm" /> Pin
                   </Button>
                 )}
-                <Button size="sm" variant="secondary" onClick={() => setEditing(true)}>✎ Edit</Button>
+                <Button size="sm" variant="secondary" onClick={() => setEditing(true)}><Icon name="edit" className="text-sm" /> Edit</Button>
               </div>
             )
           ) : undefined
@@ -180,7 +181,7 @@ export function LocationDetailSlideOut({
             <>
               {/* Map pin note — shown only when opened from a map marker */}
               {pinNote && (
-                <SlideOutSection icon="📌" title="Map Note">
+                <SlideOutSection icon="push_pin" title="Map Note">
                   <p className="text-text-secondary text-sm leading-relaxed whitespace-pre-wrap">
                     {pinNote}
                   </p>
@@ -194,7 +195,7 @@ export function LocationDetailSlideOut({
               </div>
 
               {/* Description */}
-              <SlideOutSection icon="📖" title="Description">
+              <SlideOutSection icon="menu_book" title="Description">
                 <p className="text-text-secondary text-sm leading-relaxed whitespace-pre-wrap">
                   {location.description || (
                     <span className="text-text-muted italic">No description recorded.</span>
@@ -204,7 +205,7 @@ export function LocationDetailSlideOut({
 
               {/* Related NPCs */}
               <SlideOutSection
-                icon="👥"
+                icon="groups"
                 title={`NPCs Here (${related.npcs.length})`}
                 empty={related.npcs.length === 0 ? 'No NPCs linked to this location.' : undefined}
               >
@@ -217,7 +218,7 @@ export function LocationDetailSlideOut({
                                 hover:bg-card-hover hover:border-border-glow transition-all group/npc text-left w-full"
                     >
                       <div className="w-7 h-7 rounded-full bg-accent-teal/10 border border-accent-teal/20
-                                      flex items-center justify-center shrink-0 text-xs">👤</div>
+                                      flex items-center justify-center shrink-0 text-xs"><Icon name="person" className="text-xs" /></div>
                       <div className="min-w-0">
                         <span className="font-display text-sm font-bold text-text-primary
                                          group-hover/npc:text-accent-gold transition-colors block">
@@ -234,7 +235,7 @@ export function LocationDetailSlideOut({
 
               {/* Related Factions */}
               <SlideOutSection
-                icon="⚔️"
+                icon="swords"
                 title={`Factions Present (${related.factions.length})`}
                 empty={related.factions.length === 0 ? 'No factions linked to this location.' : undefined}
               >
@@ -247,7 +248,7 @@ export function LocationDetailSlideOut({
                                 hover:bg-card-hover hover:border-border-glow transition-all group/faction text-left w-full"
                     >
                       <div className="w-7 h-7 rounded-full bg-accent-purple/10 border border-accent-purple/20
-                                      flex items-center justify-center shrink-0 text-xs">⚔️</div>
+                                      flex items-center justify-center shrink-0 text-xs"><Icon name="swords" className="text-xs" /></div>
                       <div className="min-w-0">
                         <span className="font-display text-sm font-bold text-text-primary
                                          group-hover/faction:text-accent-gold transition-colors block">
@@ -262,7 +263,7 @@ export function LocationDetailSlideOut({
 
               {/* Related Threads */}
               <SlideOutSection
-                icon="🧵"
+                icon="forum"
                 title={`Related Threads (${related.threads.length})`}
                 empty={related.threads.length === 0 ? 'No threads mention this location.' : undefined}
               >

@@ -5,6 +5,7 @@ import { useCampaignCrud } from '@/lib/useCampaignCrud';
 import type { LootItem } from '@/lib/types';
 import { PageHeader, Button, Input, Textarea, EmptyState, ConfirmDelete } from '@/components/UI';
 import { Modal } from '@/components/Modal';
+import { Icon } from '@/components/Icon';
 
 const empty = { name: '', details: '', source: '', holder: '' };
 
@@ -27,11 +28,11 @@ export default function LootPage() {
 
   return (
     <div className="animate-fade-in">
-      <PageHeader icon="💰" title="Loot & Items">
+      <PageHeader icon="paid" title="Loot & Items">
         <Button onClick={openCreate}>+ New Item</Button>
       </PageHeader>
       {loading ? <p className="text-text-muted font-mono text-sm">Loading...</p> : items.length === 0 ? (
-        <EmptyState icon="💰" message="No loot yet." />
+        <EmptyState icon="paid" message="No loot yet." />
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
@@ -50,7 +51,7 @@ export default function LootPage() {
                   <td className="p-3 text-text-muted font-mono text-xs">{l.source}</td>
                   <td className="p-3 text-text-secondary text-sm">{l.holder || '\u2014'}</td>
                   <td className="p-3">
-                    <button onClick={(e) => { e.stopPropagation(); setDeleteId(l.id); }} className="text-text-muted hover:text-accent-red text-xs font-mono">✕</button>
+                    <button onClick={(e) => { e.stopPropagation(); setDeleteId(l.id); }} className="text-text-muted hover:text-accent-red text-xs font-mono"><Icon name="close" className="text-xs" /></button>
                   </td>
                 </tr>
               ))}
