@@ -26,7 +26,7 @@ async function requireSuperAdmin() {
 }
 
 function strip<T extends Record<string, unknown>>(rows: T[], ...extra: string[]): Omit<T, 'created_at' | 'updated_at'>[] {
-  const drop = new Set(['created_at', 'updated_at', ...extra]);
+  const drop = ['created_at', 'updated_at', ...extra];
   return rows.map(row => {
     const r = { ...row };
     for (const k of drop) delete r[k];
