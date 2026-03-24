@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
-import { PageHeader, Button, Input, ConfirmDelete } from '@/components/UI';
+import { PageHeader, Button, Input, ConfirmDelete, Select } from '@/components/UI';
 import { Modal } from '@/components/Modal';
 import { Icon } from '@/components/Icon';
 
@@ -21,10 +21,11 @@ export default function UsersPage() {
   const [users,      setUsers]      = useState<AppUser[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [isAdmin,    setIsAdmin]    = useState(false);
-  const [modal,      setModal]      = useState<'create' | 'reset' | 'delete' | null>(null);
+  const [modal,      setModal]      = useState<'create' | 'reset' | 'delete' | 'role' | null>(null);
   const [selected,   setSelected]   = useState<AppUser | null>(null);
   const [createForm, setCreateForm] = useState(emptyCreate);
   const [tempPw,     setTempPw]     = useState('');
+  const [newRole,    setNewRole]    = useState<'member' | 'admin'>('member');
   const [saving,     setSaving]     = useState(false);
   const [error,      setError]      = useState<string | null>(null);
   const [success,    setSuccess]    = useState<string | null>(null);
@@ -119,6 +120,26 @@ export default function UsersPage() {
     }
   };
 
+  const handleChangeRole = async () => {
+    if (!selected) return;
+    setSaving(true); setError(null);
+    const res = await fetch(`/api/admin/users/${selected.id}`, {
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ role: newRole }),
+    });
+    setSaving(false);
+    if (res.ok) {
+      setModal(null); setSelected(null);
+      await loadUsers();
+      const label = newRole === 'admin' ? 'Admin' : 'Member';
+      flash(`"${selected.display_name}" is now ${label}.`, 'ok');
+    } else {
+      const body = await res.json();
+      setError(body.error ?? 'Failed to change role.');
+    }
+  };
+
   return (
     <div className="animate-fade-in">
       <PageHeader icon="groups" title="User Management">
@@ -175,6 +196,19 @@ export default function UsersPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-3">
+                      {isSuperAdmin && u.role !== 'super_admin' && (
+                        <button
+                          onClick={() => {
+                            setSelected(u);
+                            setNewRole(u.role === 'admin' ? 'member' : 'admin');
+                            setError(null);
+                            setModal('role');
+                          }}
+                          className="font-mono text-[0.65rem] text-text-muted hover:text-accent-purple transition-colors"
+                        >
+                          Change Role
+                        </button>
+                      )}
                       <button
                         onClick={() => { setSelected(u); setTempPw(''); setError(null); setModal('reset'); }}
                         className="font-mono text-[0.65rem] text-text-muted hover:text-accent-gold transition-colors"
@@ -248,6 +282,35 @@ export default function UsersPage() {
           <Button variant="ghost" onClick={() => setModal(null)}>Cancel</Button>
           <Button onClick={handleResetPassword} disabled={saving}>
             {saving ? 'Saving…' : 'Set Password'}
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Change role modal */}
+      <Modal open={modal === 'role'} onClose={() => setModal(null)} title="Change User Role">
+        <p className="text-sm text-text-secondary mb-4">
+          Change role for{' '}
+          <span className="text-text-primary font-mono">{selected?.display_name}</span>.
+          Admins can manage users and campaigns but cannot promote others to admin.
+        </p>
+        <Select
+          label="Role"
+          value={newRole}
+          onChange={(e) => setNewRole(e.target.value as 'member' | 'admin')}
+          options={[
+            { value: 'member', label: 'Member — regular user, no admin access' },
+            { value: 'admin',  label: 'Admin — can manage users & campaigns' },
+          ]}
+        />
+        {error && (
+          <p className="mt-2 font-mono text-[0.65rem] text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-3 py-2">
+            <Icon name="close" className="text-sm align-middle" /> {error}
+          </p>
+        )}
+        <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border-subtle">
+          <Button variant="ghost" onClick={() => setModal(null)}>Cancel</Button>
+          <Button onClick={handleChangeRole} disabled={saving}>
+            {saving ? 'Saving…' : 'Save Role'}
           </Button>
         </div>
       </Modal>
