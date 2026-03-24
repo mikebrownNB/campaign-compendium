@@ -39,8 +39,17 @@ export async function GET(
     const { data: usersData, error } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+    const callerRole = user.app_metadata?.role as string | undefined;
+    const isSuperAdmin = callerRole === 'super_admin';
+
     const available = (usersData?.users ?? [])
-      .filter(u => !memberIds.has(u.id))
+      .filter(u => {
+        // Already in the campaign — always exclude
+        if (memberIds.has(u.id)) return false;
+        // Super admins see everyone; regular admins only see users they created
+        if (isSuperAdmin) return true;
+        return (u.app_metadata?.created_by as string | undefined) === user.id;
+      })
       .map(u => ({
         id: u.id,
         display_name: (u.user_metadata?.display_name as string) ?? '',
