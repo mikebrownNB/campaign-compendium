@@ -33,7 +33,7 @@ export async function GET() {
   }
 
   // Resolve owner display names
-  const ownerIds = [...new Set((campaigns ?? []).map(c => c.owner_id).filter(Boolean))];
+  const ownerIds = Array.from(new Set((campaigns ?? []).map(c => c.owner_id).filter(Boolean)));
   const ownerMap: Record<string, string> = {};
   for (const oid of ownerIds) {
     const { data } = await supabaseAdmin.auth.admin.getUserById(oid);
