@@ -310,6 +310,11 @@ function MapsTab({ campaignId, initialMaps }: { campaignId: string; initialMaps:
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Per-map image-replace state
+  const [replacingId, setReplacingId]   = useState<string | null>(null);
+  const [replaceError, setReplaceError] = useState<string | null>(null);
+  const replaceInputRef = useRef<HTMLInputElement>(null);
+
   const loadMaps = async () => {
     const res = await fetch(`/api/campaigns/${campaignId}/maps`);
     const data = await res.json();
@@ -348,6 +353,30 @@ function MapsTab({ campaignId, initialMaps }: { campaignId: string; initialMaps:
       loadMaps();
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleReplaceImage = async (mapId: string, newFile: File) => {
+    setReplacingId(mapId); setReplaceError(null);
+    try {
+      const supabase = getSupabaseBrowser();
+      const ext = newFile.name.split('.').pop();
+      const path = `${campaignId}/${Date.now()}.${ext}`;
+      const { error: uploadErr } = await supabase.storage.from('maps').upload(path, newFile);
+      if (uploadErr) { setReplaceError(uploadErr.message); return; }
+
+      const { data: { publicUrl } } = supabase.storage.from('maps').getPublicUrl(path);
+
+      await fetch(`/api/campaigns/${campaignId}/maps`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: mapId, image_url: publicUrl }),
+      });
+
+      loadMaps();
+    } finally {
+      setReplacingId(null);
+      if (replaceInputRef.current) replaceInputRef.current.value = '';
     }
   };
 
@@ -391,21 +420,65 @@ function MapsTab({ campaignId, initialMaps }: { campaignId: string; initialMaps:
         </div>
       )}
 
+      {/* Hidden file input used for image replacement */}
+      <input
+        ref={replaceInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={e => {
+          const f = e.target.files?.[0];
+          const id = replaceInputRef.current?.dataset.mapId;
+          if (f && id) handleReplaceImage(id, f);
+        }}
+      />
+
+      {replaceError && (
+        <p className="font-mono text-[0.65rem] text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-3 py-2 mb-3">
+          <Icon name="close" className="text-sm align-middle" /> {replaceError}
+        </p>
+      )}
+
       <div className="flex flex-col gap-2">
         {maps.length === 0 ? (
           <p className="text-text-muted text-sm">No maps configured. Add a map above.</p>
         ) : maps.map(m => (
-          <div key={m.id} className="flex items-center justify-between bg-deep/30 rounded-lg px-4 py-3">
-            <div>
-              <span className="font-display text-sm text-text-primary">{m.name}</span>
-              <span className="ml-2 font-mono text-[0.55rem] text-text-muted">{m.image_url}</span>
+          <div key={m.id} className="flex items-center gap-3 bg-deep/30 rounded-lg px-4 py-3">
+            {/* Thumbnail */}
+            <div className="w-14 h-10 rounded border border-border-subtle overflow-hidden shrink-0 bg-deep flex items-center justify-center">
+              {m.image_url
+                ? <img src={m.image_url} alt={m.name} className="w-full h-full object-cover" />
+                : <Icon name="image" className="text-text-muted text-lg" />
+              }
             </div>
-            <button
-              onClick={() => handleDelete(m.id)}
-              className="font-mono text-[0.6rem] text-text-muted hover:text-accent-red transition-colors"
-            >
-              Delete
-            </button>
+
+            {/* Name + slug */}
+            <div className="flex-1 min-w-0">
+              <p className="font-display text-sm text-text-primary">{m.name}</p>
+              <p className="font-mono text-[0.55rem] text-text-muted truncate">{m.image_url || 'No image set'}</p>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-3 shrink-0">
+              <button
+                onClick={() => {
+                  if (replaceInputRef.current) {
+                    replaceInputRef.current.dataset.mapId = m.id;
+                    replaceInputRef.current.click();
+                  }
+                }}
+                disabled={replacingId === m.id}
+                className="font-mono text-[0.6rem] text-text-muted hover:text-accent-gold transition-colors disabled:opacity-40"
+              >
+                {replacingId === m.id ? 'Uploading…' : m.image_url ? 'Change Image' : 'Upload Image'}
+              </button>
+              <button
+                onClick={() => handleDelete(m.id)}
+                className="font-mono text-[0.6rem] text-text-muted hover:text-accent-red transition-colors"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         ))}
       </div>
