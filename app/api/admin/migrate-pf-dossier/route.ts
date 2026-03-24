@@ -34,7 +34,8 @@ function strip<T extends Record<string, unknown>>(rows: T[], ...extra: string[])
   }) as Omit<T, 'created_at' | 'updated_at'>[];
 }
 
-async function readAll(client: ReturnType<typeof createClient>, table: string) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function readAll(client: any, table: string) {
   const { data, error } = await client.from(table).select('*');
   if (error) throw new Error(`Reading ${table}: ${error.message}`);
   return data ?? [];
