@@ -597,6 +597,11 @@ export default function MapPage() {
           setEditForm({ label: pinForLocation.label, note: pinForLocation.note, location_id: pinForLocation.location_id ?? '' });
           setEditing(true);
         } : undefined}
+        onDeletePin={pinForLocation ? () => {
+          handleDelete(pinForLocation.id);
+          setViewingLocation(null);
+          setPinForLocation(null);
+        } : undefined}
         pinNote={pinForLocation?.note || undefined}
       />
     </>

@@ -36,6 +36,11 @@ interface Props {
    * switch to editing the map marker that triggered this slideout.
    */
   onEditPin?: () => void;
+  /**
+   * When provided, a "Delete Pin" button appears in the header to remove
+   * the map marker that triggered this slideout.
+   */
+  onDeletePin?: () => void;
 }
 
 export function LocationDetailSlideOut({
@@ -46,6 +51,7 @@ export function LocationDetailSlideOut({
   layer = 1,
   pinNote,
   onEditPin,
+  onDeletePin,
 }: Props) {
   const { update } = useCampaignCrud<GameLocation>('locations');
 
@@ -142,6 +148,11 @@ export function LocationDetailSlideOut({
               <div className="flex gap-1.5">
                 {onDelete && (
                   <Button size="sm" variant="danger" onClick={onDelete}>Delete</Button>
+                )}
+                {onDeletePin && (
+                  <Button size="sm" variant="danger" onClick={onDeletePin} title="Remove map pin">
+                    <Icon name="wrong_location" className="text-sm" /> Delete Pin
+                  </Button>
                 )}
                 {onEditPin && (
                   <Button size="sm" variant="ghost" onClick={onEditPin} title="Edit map pin">
