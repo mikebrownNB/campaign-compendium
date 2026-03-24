@@ -37,9 +37,11 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/api/auth/');
 
   if (isPublic) {
-    // Already logged in and hitting /login -> bounce to campaign selection
+    // Already logged in and hitting /login -> bounce based on role
     if (user && pathname.startsWith('/login')) {
-      return NextResponse.redirect(new URL('/', request.url));
+      const role = user.app_metadata?.role;
+      const dest = role === 'super_admin' || role === 'admin' ? '/admin/users' : '/';
+      return NextResponse.redirect(new URL(dest, request.url));
     }
     return supabaseResponse;
   }

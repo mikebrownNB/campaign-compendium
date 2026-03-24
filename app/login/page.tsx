@@ -26,7 +26,11 @@ export default function LoginPage() {
       setError('Incorrect email or password.');
       setLoading(false);
     } else {
-      router.push('/');
+      // Check role to decide landing page
+      const { data: { user } } = await supabase.auth.getUser();
+      const role = user?.app_metadata?.role;
+      const dest = role === 'super_admin' || role === 'admin' ? '/admin/users' : '/';
+      router.push(dest);
       router.refresh();
     }
   };
