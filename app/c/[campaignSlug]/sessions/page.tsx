@@ -6,6 +6,7 @@ import type { Session, NPC } from '@/lib/types';
 import { PageHeader, Button, Input, Textarea, EmptyState, ConfirmDelete } from '@/components/UI';
 import { Modal } from '@/components/Modal';
 import { NpcDetailSlideOut } from '@/components/NpcDetailSlideOut';
+import { Icon } from '@/components/Icon';
 
 /** Splits plain text on every NPC name and returns mixed string/ReactNode array. */
 function linkNpcs(text: string, npcs: NPC[], onNpcClick: (npc: NPC) => void): React.ReactNode {
@@ -77,11 +78,11 @@ export default function SessionsPage() {
 
   return (
     <div className="animate-fade-in">
-      <PageHeader icon="\uD83D\uDCDC" title="Session Log">
+      <PageHeader icon="history_edu" title="Session Log">
         <Button onClick={openCreate}>+ New Session</Button>
       </PageHeader>
       {loading ? <p className="text-text-muted font-mono text-sm">Loading...</p> : sorted.length === 0 ? (
-        <EmptyState icon="\uD83D\uDCDC" message="No sessions logged yet." />
+        <EmptyState icon="history_edu" message="No sessions logged yet." />
       ) : (
         <div className="flex flex-col gap-2">
           {sorted.map((s) => (
@@ -101,7 +102,7 @@ export default function SessionsPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <button onClick={(e) => { e.stopPropagation(); openEdit(s); }} className="text-text-muted hover:text-accent-gold text-xs font-mono">Edit</button>
-                  <span className={`text-accent-purple transition-transform ${expandedId === s.id ? 'rotate-180' : ''}`}>\u25BC</span>
+                  <Icon name="expand_more" className={`text-accent-purple transition-transform text-base ${expandedId === s.id ? 'rotate-180' : ''}`} />
                 </div>
               </div>
               {expandedId === s.id && (
@@ -118,7 +119,7 @@ export default function SessionsPage() {
                         onClick={(e) => e.stopPropagation()}
                         className="text-accent-purple hover:text-accent-gold text-xs font-mono transition-colors"
                       >
-                        \uD83D\uDCC4 Full Notes \u2197
+                        <Icon name="description" className="text-sm align-middle" /> Full Notes ↗
                       </a>
                     )}
                     <button onClick={() => setDeleteId(s.id)} className="text-text-muted hover:text-accent-red text-xs font-mono">Delete session</button>
