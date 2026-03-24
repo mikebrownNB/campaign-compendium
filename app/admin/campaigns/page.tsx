@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
-import { PageHeader, Button, ConfirmDelete } from '@/components/UI';
+import { PageHeader, Button, ConfirmDelete, Select } from '@/components/UI';
 import { Modal } from '@/components/Modal';
 import { Icon } from '@/components/Icon';
 
@@ -17,14 +17,24 @@ interface AdminCampaign {
   created_at:   string;
 }
 
+interface AdminUser {
+  id:           string;
+  email:        string;
+  display_name: string | null;
+  role:         string;
+}
+
 export default function AdminCampaignsPage() {
-  const [campaigns, setCampaigns] = useState<AdminCampaign[]>([]);
-  const [loading,   setLoading]   = useState(true);
-  const [allowed,   setAllowed]   = useState(false);
-  const [selected,  setSelected]  = useState<AdminCampaign | null>(null);
-  const [modal,     setModal]     = useState<'delete' | null>(null);
-  const [error,     setError]     = useState<string | null>(null);
-  const [success,   setSuccess]   = useState<string | null>(null);
+  const [campaigns,    setCampaigns]    = useState<AdminCampaign[]>([]);
+  const [loading,      setLoading]      = useState(true);
+  const [allowed,      setAllowed]      = useState(false);
+  const [selected,     setSelected]     = useState<AdminCampaign | null>(null);
+  const [modal,        setModal]        = useState<'delete' | 'reassign' | null>(null);
+  const [error,        setError]        = useState<string | null>(null);
+  const [success,      setSuccess]      = useState<string | null>(null);
+  const [users,        setUsers]        = useState<AdminUser[]>([]);
+  const [newOwnerId,   setNewOwnerId]   = useState<string>('');
+  const [saving,       setSaving]       = useState(false);
 
   const loadCampaigns = useCallback(async () => {
     setLoading(true);
@@ -58,6 +68,39 @@ export default function AdminCampaignsPage() {
     if (type === 'ok') { setSuccess(msg); setError(null); }
     else               { setError(msg);   setSuccess(null); }
     setTimeout(() => { setSuccess(null); setError(null); }, 4000);
+  };
+
+  const openReassign = async (c: AdminCampaign) => {
+    setSelected(c);
+    setNewOwnerId(c.owner_id ?? '');
+    // Lazy-load the users list once
+    if (users.length === 0) {
+      const res = await fetch('/api/admin/users');
+      if (res.ok) setUsers(await res.json());
+    }
+    setModal('reassign');
+  };
+
+  const handleReassign = async () => {
+    if (!selected) return;
+    setSaving(true);
+    const res = await fetch('/api/admin/campaigns', {
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ campaign_id: selected.id, owner_id: newOwnerId || null }),
+    });
+    setSaving(false);
+    if (res.ok) {
+      setModal(null);
+      await loadCampaigns();
+      const ownerLabel = newOwnerId
+        ? (users.find(u => u.id === newOwnerId)?.display_name || users.find(u => u.id === newOwnerId)?.email || 'new owner')
+        : 'no owner';
+      flash(`"${selected.name}" reassigned to ${ownerLabel}.`, 'ok');
+    } else {
+      const body = await res.json();
+      flash(body.error ?? 'Failed to reassign owner.', 'err');
+    }
   };
 
   const handleDelete = async () => {
@@ -123,7 +166,13 @@ export default function AdminCampaignsPage() {
                     {new Date(c.created_at).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center justify-end">
+                    <div className="flex items-center justify-end gap-3">
+                      <button
+                        onClick={() => openReassign(c)}
+                        className="font-mono text-[0.65rem] text-text-muted hover:text-accent-gold transition-colors"
+                      >
+                        Change Owner
+                      </button>
                       <button
                         onClick={() => { setSelected(c); setModal('delete'); }}
                         className="font-mono text-[0.65rem] text-text-muted hover:text-accent-red transition-colors"
@@ -138,6 +187,31 @@ export default function AdminCampaignsPage() {
           </table>
         </div>
       )}
+
+      {/* Reassign owner modal */}
+      <Modal open={modal === 'reassign'} onClose={() => setModal(null)} title="Change Campaign Owner">
+        <p className="text-sm text-text-secondary mb-4">
+          Reassign <span className="text-text-primary font-mono">{selected?.name}</span> to a different owner.
+        </p>
+        <Select
+          label="New Owner"
+          value={newOwnerId}
+          onChange={(e) => setNewOwnerId(e.target.value)}
+          options={[
+            { value: '', label: '— No owner —' },
+            ...users.map(u => ({
+              value: u.id,
+              label: u.display_name ? `${u.display_name} (${u.email})` : u.email,
+            })),
+          ]}
+        />
+        <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border-subtle">
+          <Button variant="ghost" onClick={() => setModal(null)}>Cancel</Button>
+          <Button onClick={handleReassign} disabled={saving}>
+            {saving ? 'Saving…' : 'Save'}
+          </Button>
+        </div>
+      </Modal>
 
       {/* Delete confirm modal */}
       <Modal open={modal === 'delete'} onClose={() => setModal(null)} title="Delete Campaign">

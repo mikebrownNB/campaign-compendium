@@ -56,6 +56,23 @@ export async function GET() {
   return NextResponse.json(result);
 }
 
+// PATCH /api/admin/campaigns — reassign campaign owner
+export async function PATCH(request: NextRequest) {
+  const admin = await requireSuperAdmin();
+  if (!admin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
+  const { campaign_id, owner_id } = await request.json();
+  if (!campaign_id) return NextResponse.json({ error: 'campaign_id is required' }, { status: 400 });
+
+  const { error } = await supabaseAdmin
+    .from('campaigns')
+    .update({ owner_id: owner_id ?? null })
+    .eq('id', campaign_id);
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true });
+}
+
 // DELETE /api/admin/campaigns?id=<campaignId> — delete a campaign
 export async function DELETE(request: NextRequest) {
   const admin = await requireSuperAdmin();
