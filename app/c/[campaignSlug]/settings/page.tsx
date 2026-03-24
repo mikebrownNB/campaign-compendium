@@ -7,7 +7,8 @@ import { getSupabaseBrowser } from '@/lib/supabase-browser';
 import { PageHeader, Button, Input, Textarea, ConfirmDelete } from '@/components/UI';
 import { Modal } from '@/components/Modal';
 import { Icon } from '@/components/Icon';
-import type { CampaignMap, WidgetConfig } from '@/lib/types';
+import type { CampaignMap, WidgetConfig, CalendarConfig } from '@/lib/types';
+import { DEFAULT_CALENDAR } from '@/lib/types';
 
 export default function CampaignSettingsPage() {
   const router = useRouter();
@@ -37,7 +38,7 @@ export default function CampaignSettingsPage() {
 
 function SettingsContent({ campaign, initialMaps, isOwner }: { campaign: any; initialMaps: CampaignMap[]; isOwner: boolean }) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'general' | 'members' | 'maps' | 'widgets'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'members' | 'maps' | 'calendar' | 'widgets'>('general');
 
   return (
     <div className="animate-fade-in max-w-3xl">
@@ -45,7 +46,7 @@ function SettingsContent({ campaign, initialMaps, isOwner }: { campaign: any; in
 
       {/* Tabs */}
       <div className="flex gap-1 mb-6 border-b border-border-subtle pb-px">
-        {(['general', 'members', 'maps', 'widgets'] as const).map(tab => (
+        {(['general', 'members', 'maps', 'calendar', 'widgets'] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -57,10 +58,11 @@ function SettingsContent({ campaign, initialMaps, isOwner }: { campaign: any; in
         ))}
       </div>
 
-      {activeTab === 'general' && <GeneralTab campaign={campaign} isOwner={isOwner} />}
-      {activeTab === 'members' && <MembersTab campaignId={campaign.id} />}
-      {activeTab === 'maps' && <MapsTab campaignId={campaign.id} initialMaps={initialMaps} />}
-      {activeTab === 'widgets' && <WidgetsTab campaign={campaign} />}
+      {activeTab === 'general'  && <GeneralTab campaign={campaign} isOwner={isOwner} />}
+      {activeTab === 'members'  && <MembersTab campaignId={campaign.id} />}
+      {activeTab === 'maps'     && <MapsTab campaignId={campaign.id} initialMaps={initialMaps} />}
+      {activeTab === 'calendar' && <CalendarTab campaign={campaign} />}
+      {activeTab === 'widgets'  && <WidgetsTab campaign={campaign} />}
     </div>
   );
 }
@@ -481,6 +483,197 @@ function MapsTab({ campaignId, initialMaps }: { campaignId: string; initialMaps:
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Calendar Tab ───────────────────────────────────────────────────────────────
+const SEASONS = ['spring', 'summer', 'fall', 'winter'] as const;
+
+function CalendarTab({ campaign }: { campaign: any }) {
+  const router = useRouter();
+
+  const initCalendar = (): CalendarConfig => {
+    const base = campaign.settings?.calendar ?? DEFAULT_CALENDAR;
+    return {
+      months:       base.months.map((m: { name: string; season: string }) => ({ ...m })),
+      daysPerMonth: base.daysPerMonth,
+      weekdays:     [...base.weekdays],
+    };
+  };
+
+  const [cal,     setCal]     = useState<CalendarConfig>(initCalendar);
+  const [saving,  setSaving]  = useState(false);
+  const [saved,   setSaved]   = useState(false);
+  const [saveErr, setSaveErr] = useState<string | null>(null);
+
+  const setMonth = (i: number, field: 'name' | 'season', value: string) => {
+    setCal(c => {
+      const months = c.months.map((m, idx) => idx === i ? { ...m, [field]: value } : m);
+      return { ...c, months };
+    });
+  };
+
+  const addMonth = () => {
+    setCal(c => ({
+      ...c,
+      months: [...c.months, { name: `Month ${c.months.length + 1}`, season: 'spring' }],
+    }));
+  };
+
+  const removeMonth = (i: number) => {
+    setCal(c => ({ ...c, months: c.months.filter((_, idx) => idx !== i) }));
+  };
+
+  const handleSave = async () => {
+    setSaving(true); setSaved(false); setSaveErr(null);
+    try {
+      const res = await fetch(`/api/campaigns/${campaign.id}`, {
+        method:  'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          id:       campaign.id,
+          settings: { ...campaign.settings, calendar: cal },
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setSaveErr(body.error ?? `HTTP ${res.status}`);
+      } else {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
+        router.refresh();
+      }
+    } catch (e) {
+      setSaveErr(e instanceof Error ? e.message : 'Save failed.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const selectClass = "bg-deep border border-border-subtle rounded-lg px-2 py-1.5 text-text-primary font-body text-sm";
+
+  return (
+    <div className="bg-card border border-border-subtle rounded-lg p-6 flex flex-col gap-6">
+      <h3 className="font-display text-sm text-accent-gold tracking-wider">Custom Calendar</h3>
+
+      {/* Days per month + weekdays */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="flex flex-col gap-1">
+          <label className="font-mono text-[0.65rem] text-text-muted uppercase tracking-widest">Days per Month</label>
+          <input
+            type="number"
+            min={1}
+            max={365}
+            value={cal.daysPerMonth}
+            onChange={e => setCal(c => ({ ...c, daysPerMonth: Math.max(1, parseInt(e.target.value) || 1) }))}
+            className="bg-deep border border-border-subtle rounded-lg px-3 py-2 text-text-primary font-body text-sm w-full"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="font-mono text-[0.65rem] text-text-muted uppercase tracking-widest">
+            Weekdays <span className="normal-case text-text-muted">(comma-separated)</span>
+          </label>
+          <input
+            type="text"
+            value={cal.weekdays.join(', ')}
+            onChange={e => setCal(c => ({
+              ...c,
+              weekdays: e.target.value.split(',').map(w => w.trim()).filter(Boolean),
+            }))}
+            placeholder="Mon, Tue, Wed, Thu, Fri, Sat, Sun"
+            className="bg-deep border border-border-subtle rounded-lg px-3 py-2 text-text-primary font-body text-sm w-full"
+          />
+          <p className="font-mono text-[0.55rem] text-text-muted">{cal.weekdays.length} day week</p>
+        </div>
+      </div>
+
+      {/* Month list */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <label className="font-mono text-[0.65rem] text-text-muted uppercase tracking-widest">
+            Months <span className="normal-case">({cal.months.length})</span>
+          </label>
+          <button
+            onClick={addMonth}
+            className="font-mono text-[0.65rem] text-accent-gold hover:text-accent-gold/80 transition-colors"
+          >
+            + Add Month
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          {cal.months.map((m, i) => (
+            <div key={i} className="flex items-center gap-2 bg-deep/40 rounded-lg px-3 py-2">
+              {/* Number badge */}
+              <span className="font-mono text-[0.6rem] text-text-muted w-5 text-right shrink-0">{i + 1}</span>
+
+              {/* Name */}
+              <input
+                type="text"
+                value={m.name}
+                onChange={e => setMonth(i, 'name', e.target.value)}
+                placeholder={`Month ${i + 1}`}
+                className="flex-1 min-w-0 bg-deep border border-border-subtle rounded px-2 py-1 text-text-primary font-body text-sm"
+              />
+
+              {/* Season */}
+              <select
+                value={m.season}
+                onChange={e => setMonth(i, 'season', e.target.value)}
+                className={`${selectClass} shrink-0`}
+              >
+                {SEASONS.map(s => (
+                  <option key={s} value={s} style={{ background: '#1a1410' }}>
+                    {s.charAt(0).toUpperCase() + s.slice(1)}
+                  </option>
+                ))}
+              </select>
+
+              {/* Remove */}
+              <button
+                onClick={() => removeMonth(i)}
+                disabled={cal.months.length <= 1}
+                title="Remove month"
+                className="text-text-muted hover:text-accent-red transition-colors disabled:opacity-20 shrink-0"
+              >
+                <Icon name="close" className="text-sm" />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Preview */}
+      <div className="bg-deep/40 rounded-lg px-4 py-3 font-mono text-[0.65rem] text-text-muted leading-relaxed">
+        <p className="text-text-secondary mb-1 font-bold">Preview</p>
+        <p>
+          <span className="text-accent-gold">{cal.months.length}</span> months ×{' '}
+          <span className="text-accent-gold">{cal.daysPerMonth}</span> days ={' '}
+          <span className="text-accent-gold">{cal.months.length * cal.daysPerMonth}</span> days/year
+          {cal.weekdays.length > 0 && (
+            <> · <span className="text-accent-gold">{cal.weekdays.length}</span>-day weeks</>
+          )}
+        </p>
+        <p className="mt-1">{cal.months.map(m => m.name).join(' · ')}</p>
+      </div>
+
+      {saveErr && (
+        <p className="font-mono text-[0.65rem] text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-3 py-2">
+          <Icon name="close" className="text-sm align-middle" /> {saveErr}
+        </p>
+      )}
+      {saved && (
+        <p className="font-mono text-[0.65rem] text-green-400 bg-green-400/10 border border-green-400/30 rounded px-3 py-2">
+          <Icon name="check_circle" className="text-sm align-middle" /> Calendar saved.
+        </p>
+      )}
+
+      <div>
+        <Button onClick={handleSave} disabled={saving || cal.months.length === 0}>
+          {saving ? 'Saving…' : 'Save Calendar'}
+        </Button>
       </div>
     </div>
   );
