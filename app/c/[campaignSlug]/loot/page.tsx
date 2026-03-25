@@ -16,7 +16,7 @@ const statusStyle: Record<LootStatus, string> = {
   Lost:    'text-accent-red bg-accent-red/10 border-accent-red/30',
 };
 
-const empty = { name: '', details: '', source: '', holder: '', status: 'Carried' as LootStatus, price: '', sold_by_faction: '' };
+const empty = { name: '', details: '', source: '', holder: '', status: 'Carried' as LootStatus, price: '', sold_by_faction: '', dnd_beyond_url: '' };
 
 type SortKey = 'name' | 'source' | 'holder' | 'price';
 type SortDir = 'asc' | 'desc';
@@ -85,7 +85,7 @@ export default function LootPage() {
 
   const openCreate = () => { setForm(empty); setEditId(null); setSlideOpen(true); };
   const openEdit   = (l: LootItem) => {
-    setForm({ name: l.name, details: l.details, source: l.source, holder: l.holder || '', status: (l.status || 'Carried') as LootStatus, price: l.price || '', sold_by_faction: l.sold_by_faction || '' });
+    setForm({ name: l.name, details: l.details, source: l.source, holder: l.holder || '', status: (l.status || 'Carried') as LootStatus, price: l.price || '', sold_by_faction: l.sold_by_faction || '', dnd_beyond_url: l.dnd_beyond_url || '' });
     setEditId(l.id);
     setSlideOpen(true);
   };
@@ -93,7 +93,7 @@ export default function LootPage() {
   const handleSave = async () => {
     if (!form.name.trim()) return;
     setSaving(true);
-    const data = { ...form, holder: form.holder || null, price: form.price || null, sold_by_faction: form.sold_by_faction || null };
+    const data = { ...form, holder: form.holder || null, price: form.price || null, sold_by_faction: form.sold_by_faction || null, dnd_beyond_url: form.dnd_beyond_url || null };
     if (editId) await update({ id: editId, ...data });
     else        await create(data);
     setSaving(false);
@@ -186,6 +186,7 @@ export default function LootPage() {
                 <th className="text-left p-3 font-display text-[0.65rem] tracking-wider uppercase text-accent-purple bg-accent-purple/5 border-b border-border-subtle">Sold By</th>
                 <th className="text-left p-3 font-display text-[0.65rem] tracking-wider uppercase text-accent-purple bg-accent-purple/5 border-b border-border-subtle">Status</th>
                 <th className="text-left p-3 font-display text-[0.65rem] tracking-wider uppercase text-accent-purple bg-accent-purple/5 border-b border-border-subtle">Details</th>
+                <th className="w-10 p-3 font-display text-[0.65rem] tracking-wider uppercase text-accent-purple bg-accent-purple/5 border-b border-border-subtle" title="D&D Beyond">DnDB</th>
                 <th className="w-10 bg-accent-purple/5 border-b border-border-subtle rounded-tr-lg" />
               </tr>
             </thead>
@@ -216,6 +217,20 @@ export default function LootPage() {
                   </td>
                   <td className="p-3 max-w-xs">
                     <p className="text-text-secondary text-xs line-clamp-2">{l.details}</p>
+                  </td>
+                  <td className="p-3 text-center">
+                    {l.dnd_beyond_url ? (
+                      <a
+                        href={l.dnd_beyond_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        title="Open in D&D Beyond"
+                        className="inline-flex items-center justify-center text-accent-purple/60 hover:text-accent-purple transition-colors"
+                      >
+                        <Icon name="open_in_new" className="text-sm" />
+                      </a>
+                    ) : null}
                   </td>
                   <td className="p-3 text-center">
                     <button
@@ -279,6 +294,7 @@ export default function LootPage() {
               {factionNames.map(f => <option key={f} value={f}>{f}</option>)}
             </select>
           </div>
+          <Input label="D&D Beyond URL" value={form.dnd_beyond_url} onChange={(e) => setForm({ ...form, dnd_beyond_url: e.target.value })} placeholder="https://www.dndbeyond.com/magic-items/…" />
           <Textarea label="Details" value={form.details} onChange={(e) => setForm({ ...form, details: e.target.value })} rows={6} />
         </div>
       </SlideOut>

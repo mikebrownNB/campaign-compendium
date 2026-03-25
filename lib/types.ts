@@ -129,6 +129,7 @@ export interface LootItem {
   status: LootStatus;
   price?: string;
   sold_by_faction?: string;
+  dnd_beyond_url?: string;
   created_at?: string;
   updated_at?: string;
 }
