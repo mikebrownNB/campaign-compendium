@@ -114,6 +114,10 @@ export interface Faction {
 }
 
 // ===== Loot Types =====
+export type LootStatus = 'Carried' | 'Known' | 'Sold' | 'Lost';
+
+export const LOOT_STATUSES: LootStatus[] = ['Carried', 'Known', 'Sold', 'Lost'];
+
 export interface LootItem {
   id: string;
   campaign_id: string;
@@ -121,6 +125,8 @@ export interface LootItem {
   details: string;
   source: string;
   holder?: string;
+  status: LootStatus;
+  price?: string;
   created_at?: string;
   updated_at?: string;
 }
