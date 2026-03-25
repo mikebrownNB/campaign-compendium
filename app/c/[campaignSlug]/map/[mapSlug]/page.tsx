@@ -169,6 +169,14 @@ export default function MapPage() {
 
   const handleImageLoad = useCallback(() => { setImgLoaded(true); fitMap(); }, [fitMap]);
 
+  // Fallback: if image is already cached, onLoad may not fire — check on mount/map change
+  useEffect(() => {
+    const img = imgRef.current;
+    if (img && img.complete && img.naturalWidth > 0 && !imgLoaded) {
+      handleImageLoad();
+    }
+  }, [mapSlug, imgLoaded, handleImageLoad]);
+
   // -- Wheel zoom --
   useEffect(() => {
     const container = containerRef.current;
