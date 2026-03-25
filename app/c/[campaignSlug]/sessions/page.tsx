@@ -93,7 +93,7 @@ export default function SessionsPage() {
               >
                 <div>
                   <h3 className="font-display text-sm font-bold text-text-primary">
-                    Session {s.number} \u2014 {s.title}
+                    Session {s.number} — {s.title}
                   </h3>
                   <div className="flex gap-4 mt-1">
                     <span className="font-mono text-[0.65rem] text-text-muted">{s.real_date}</span>
@@ -137,7 +137,7 @@ export default function SessionsPage() {
         </div>
         <div className="grid grid-cols-2 gap-3">
           <Input label="Real Date" value={form.real_date} onChange={(e) => setForm({ ...form, real_date: e.target.value })} placeholder="Mar 14, 2026" />
-          <Input label="In-Game Date" value={form.ingame_date} onChange={(e) => setForm({ ...form, ingame_date: e.target.value })} placeholder="Fallimall 21\u201328" />
+          <Input label="In-Game Date" value={form.ingame_date} onChange={(e) => setForm({ ...form, ingame_date: e.target.value })} placeholder="Fallimall 21–28" />
         </div>
         <Textarea label="Summary" value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })} rows={6} placeholder="What happened this session..." />
         <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border-subtle">
@@ -149,7 +149,7 @@ export default function SessionsPage() {
         <ConfirmDelete onConfirm={async () => { if (deleteId) { await remove(deleteId); setDeleteId(null); } }} onCancel={() => setDeleteId(null)} />
       </Modal>
 
-      {/* NPC detail slideout \u2014 triggered by inline name links in summaries */}
+      {/* NPC detail slideout — triggered by inline name links in summaries */}
       <NpcDetailSlideOut npc={viewingNpc} onClose={() => setViewingNpc(null)} />
     </div>
   );
