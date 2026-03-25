@@ -119,7 +119,7 @@ export default function NPCsPage() {
             <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary text-sm"><Icon name="close" className="text-sm" /></button>
           )}
         </div>
-        <div className="flex gap-3 flex-wrap items-center">
+        <div className="grid grid-cols-2 md:flex gap-2 md:gap-3 flex-wrap items-center">
           {[
             { value: filterFaction,  set: setFilterFaction,  label: 'All Factions',  opts: uniqueFactions  },
             { value: filterLocation, set: setFilterLocation, label: 'All Locations', opts: uniqueLocations },
@@ -138,7 +138,7 @@ export default function NPCsPage() {
           </select>
           {activeFilterCount > 0 && (
             <button onClick={() => { setFilterFaction(''); setFilterLocation(''); setFilterRole(''); setFilterStatus(''); }}
-              className="font-mono text-xs text-accent-red hover:text-accent-red/80 transition-colors">
+              className="col-span-2 md:col-span-1 font-mono text-xs text-accent-red hover:text-accent-red/80 transition-colors">
               Clear {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}
             </button>
           )}
@@ -151,8 +151,36 @@ export default function NPCsPage() {
       ) : processed.length === 0 ? (
         <EmptyState icon="groups" message={search || activeFilterCount > 0 ? 'No NPCs match your filters.' : 'No NPCs yet. Create your first one.'} />
       ) : (
-        <div className="overflow-x-auto border border-border-subtle rounded-lg">
-          <table className="w-full border-collapse min-w-[700px]">
+        {/* Mobile card view */}
+        <div className="md:hidden flex flex-col gap-3">
+          {processed.map((n) => {
+            const s = (n.status || 'Unknown') as NpcStatus;
+            return (
+              <div
+                key={n.id}
+                onClick={() => openEdit(n)}
+                className="bg-card border border-border-subtle rounded-lg p-4 cursor-pointer hover:bg-card-hover transition-colors active:bg-card-hover/80"
+              >
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <span className="font-display text-sm font-bold text-accent-gold truncate">{n.name}</span>
+                  <span className={`font-mono text-xs border rounded px-2 py-0.5 shrink-0 ${statusStyle[s]}`}>{s}</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5 mb-1">
+                  <Tag variant="npc">{n.role}</Tag>
+                  {n.faction && <Tag variant="faction">{n.faction}</Tag>}
+                </div>
+                {n.location && (
+                  <p className="font-mono text-[0.6rem] text-accent-blue flex items-center gap-0.5">
+                    <Icon name="location_on" className="text-xs" /> {n.location}
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        {/* Desktop table */}
+        <div className="hidden md:block overflow-x-auto border border-border-subtle rounded-lg">
+          <table className="w-full border-collapse">
             <thead>
               <tr>
                 {(['name', 'role', 'faction', 'location'] as SortKey[]).map(col => (
@@ -234,7 +262,7 @@ export default function NPCsPage() {
       >
         <div className="flex flex-col gap-4">
           <Input label="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <Input label="Role" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} placeholder="Broker, Ally, Merchant…" />
             <div className="flex flex-col gap-1">
               <label className="font-mono text-[0.65rem] text-text-muted uppercase tracking-widest">Status</label>
@@ -247,7 +275,7 @@ export default function NPCsPage() {
               </select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
               <label className="font-mono text-[0.65rem] text-text-muted uppercase tracking-widest">Faction</label>
               <select

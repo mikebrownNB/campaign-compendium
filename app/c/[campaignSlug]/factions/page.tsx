@@ -169,7 +169,7 @@ export default function FactionsPage() {
                     <img
                       src={f.logo_url}
                       alt={`${f.name} logo`}
-                      className="w-[125px] h-[125px] rounded-lg object-cover border border-border-subtle shrink-0"
+                      className="w-[80px] h-[80px] md:w-[125px] md:h-[125px] rounded-lg object-cover border border-border-subtle shrink-0"
                     />
                   )}
                   <div className="flex-1 min-w-0">
@@ -368,7 +368,7 @@ export default function FactionsPage() {
                   <img
                     src={logoPreview}
                     alt="Logo preview"
-                    className="w-[125px] h-[125px] rounded-lg border border-border-subtle object-cover bg-surface"
+                    className="w-[80px] h-[80px] md:w-[125px] md:h-[125px] rounded-lg border border-border-subtle object-cover bg-surface"
                   />
                   <button
                     type="button"
@@ -380,7 +380,7 @@ export default function FactionsPage() {
                   </button>
                 </div>
               ) : (
-                <div className="w-[125px] h-[125px] rounded-lg border border-dashed border-border-subtle flex items-center justify-center text-text-muted shrink-0">
+                <div className="w-[80px] h-[80px] md:w-[125px] md:h-[125px] rounded-lg border border-dashed border-border-subtle flex items-center justify-center text-text-muted shrink-0">
                   <Icon name="image" className="text-2xl" />
                 </div>
               )}

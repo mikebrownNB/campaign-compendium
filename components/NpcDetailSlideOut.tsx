@@ -96,7 +96,7 @@ export function NpcDetailSlideOut({ npc, onClose, onUpdated, layer = 1 }: Props)
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
             />
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <Input
                 label="Role"
                 value={form.role}
@@ -116,7 +116,7 @@ export function NpcDetailSlideOut({ npc, onClose, onUpdated, layer = 1 }: Props)
                 </select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <Input
                 label="Faction"
                 value={form.faction}

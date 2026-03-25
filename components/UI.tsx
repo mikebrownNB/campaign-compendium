@@ -8,7 +8,7 @@ export function PageHeader({ icon, title, subtitle, children }: { icon: string; 
   return (
     <div className="flex items-center justify-between flex-wrap gap-4 mb-8 pb-4 border-b-2 border-border-subtle">
       <div>
-        <h2 className="font-display text-2xl font-bold text-accent-gold flex items-center gap-3 tracking-wider">
+        <h2 className="font-display text-xl md:text-2xl font-bold text-accent-gold flex items-center gap-3 tracking-wider">
           <Icon name={icon} className="text-xl" /> {title}
         </h2>
         {subtitle && <p className="font-mono text-[0.65rem] text-text-muted mt-1 ml-9">{subtitle}</p>}

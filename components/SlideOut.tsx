@@ -49,20 +49,20 @@ export function SlideOut({ open, onClose, title, subtitle, headerExtra, headerIm
 
       {/* Panel */}
       <div
-        className={`fixed top-0 right-0 h-full w-full max-w-xl bg-deep border-l border-border-glow ${panelZ}
+        className={`fixed top-0 right-0 h-full w-full md:max-w-xl bg-deep border-l border-border-glow ${panelZ}
                     transition-transform duration-300 ease-in-out
                     ${open ? 'translate-x-0' : 'translate-x-full'}
                     overflow-y-auto`}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-deep/95 backdrop-blur-xl border-b border-border-subtle p-6 z-10">
+        <div className="sticky top-0 bg-deep/95 backdrop-blur-xl border-b border-border-subtle p-4 md:p-6 z-10">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3 flex-1 min-w-0">
               {headerImage && (
                 <img
                   src={headerImage}
                   alt=""
-                  className="w-[125px] h-[125px] rounded-lg object-cover border border-border-subtle shrink-0"
+                  className="w-[80px] h-[80px] md:w-[125px] md:h-[125px] rounded-lg object-cover border border-border-subtle shrink-0"
                 />
               )}
               <div className="min-w-0">
@@ -83,7 +83,7 @@ export function SlideOut({ open, onClose, title, subtitle, headerExtra, headerIm
         </div>
 
         {/* Body */}
-        <div className="p-6">
+        <div className="p-4 md:p-6">
           {children}
         </div>
       </div>

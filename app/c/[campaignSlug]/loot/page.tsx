@@ -126,9 +126,9 @@ export default function LootPage() {
             <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary text-sm"><Icon name="close" className="text-sm" /></button>
           )}
         </div>
-        <div className="flex gap-3 flex-wrap items-center">
+        <div className="grid grid-cols-2 md:flex gap-2 md:gap-3 flex-wrap items-center">
           {/* Status multiselect chips */}
-          <div className="flex gap-1">
+          <div className="flex gap-1 flex-wrap col-span-2">
             {LOOT_STATUSES.map(s => {
               const active = filterStatuses.has(s);
               const toggle = () => {
@@ -158,7 +158,7 @@ export default function LootPage() {
           ))}
           {activeFilterCount > 0 && (
             <button onClick={() => { setFilterStatuses(new Set<LootStatus>(LOOT_STATUSES)); setFilterSource(''); setFilterHolder(''); setFilterFaction(''); }}
-              className="font-mono text-xs text-accent-red hover:text-accent-red/80 transition-colors">
+              className="col-span-2 md:col-span-1 font-mono text-xs text-accent-red hover:text-accent-red/80 transition-colors">
               Clear {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}
             </button>
           )}
@@ -171,8 +171,39 @@ export default function LootPage() {
       ) : processed.length === 0 ? (
         <EmptyState icon="paid" message={search || activeFilterCount > 0 || statusFiltered ? 'No items match your filters.' : 'No loot yet. Create your first item.'} />
       ) : (
-        <div className="overflow-x-auto border border-border-subtle rounded-lg">
-          <table className="w-full border-collapse min-w-[800px]">
+        {/* Mobile card view */}
+        <div className="md:hidden flex flex-col gap-3">
+          {processed.map((l) => {
+            const s = (l.status || 'Carried') as LootStatus;
+            return (
+              <div
+                key={l.id}
+                onClick={() => openEdit(l)}
+                className="bg-card border border-border-subtle rounded-lg p-4 cursor-pointer hover:bg-card-hover transition-colors active:bg-card-hover/80"
+              >
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <span className="font-display text-sm font-bold text-accent-gold truncate">{l.name}</span>
+                  <span className={`font-mono text-xs border rounded px-2 py-0.5 shrink-0 ${statusStyle[s]}`}>{s}</span>
+                </div>
+                <div className="flex flex-wrap gap-2 text-xs font-mono">
+                  {l.holder && <span className="text-text-secondary">{l.holder}</span>}
+                  {l.price && <span className="text-accent-gold">{l.price}</span>}
+                  {l.sold_by_faction && <span className="text-accent-blue">{l.sold_by_faction}</span>}
+                  {l.dnd_beyond_url && (
+                    <a href={l.dnd_beyond_url} target="_blank" rel="noopener noreferrer"
+                       onClick={(e) => e.stopPropagation()}
+                       className="text-accent-purple/60 hover:text-accent-purple">
+                      <Icon name="open_in_new" className="text-sm" />
+                    </a>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        {/* Desktop table */}
+        <div className="hidden md:block overflow-x-auto border border-border-subtle rounded-lg">
+          <table className="w-full border-collapse">
             <thead>
               <tr>
                 {(['name', 'holder', 'price'] as SortKey[]).map((col, ci) => (
@@ -266,7 +297,7 @@ export default function LootPage() {
       >
         <div className="flex flex-col gap-4">
           <Input label="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
               <label className="font-mono text-[0.65rem] text-text-muted uppercase tracking-widest">Status</label>
               <select
@@ -279,7 +310,7 @@ export default function LootPage() {
             </div>
             <Input label="Price" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder="e.g. 500gp" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <Input label="Source" value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} placeholder="S7 — Zendali" />
             <Input label="Holder" value={form.holder} onChange={(e) => setForm({ ...form, holder: e.target.value })} placeholder="Optional" />
           </div>
