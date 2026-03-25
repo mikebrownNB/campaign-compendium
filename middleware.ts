@@ -31,9 +31,10 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Allow login page + any API routes needed before a session exists
+  // Allow login page + auth flow pages + any API routes needed before a session exists
   const isPublic =
     pathname.startsWith('/login') ||
+    pathname.startsWith('/auth/') ||
     pathname.startsWith('/api/auth/');
 
   if (isPublic) {
