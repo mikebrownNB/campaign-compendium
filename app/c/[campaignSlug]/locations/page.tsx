@@ -6,6 +6,7 @@ import type { GameLocation } from '@/lib/types';
 import { useCampaign } from '@/lib/CampaignContext';
 import { PageHeader, Button, Card, Tag, Input, Textarea, EmptyState, ConfirmDelete } from '@/components/UI';
 import { Modal } from '@/components/Modal';
+import { SlideOut } from '@/components/SlideOut';
 import { LocationDetailSlideOut } from '@/components/LocationDetailSlideOut';
 import { DmOnlyToggle, DmOnlyBadge } from '@/components/DmOnlyToggle';
 
@@ -18,11 +19,14 @@ export default function LocationsPage() {
   const [selected,   setSelected]   = useState<GameLocation | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [createForm, setCreateForm] = useState(empty);
+  const [saving,     setSaving]     = useState(false);
   const [deleteId,   setDeleteId]   = useState<string | null>(null);
 
   const handleCreate = async () => {
     if (!createForm.name.trim()) return;
+    setSaving(true);
     await create(createForm);
+    setSaving(false);
     setCreateOpen(false);
     setCreateForm(empty);
   };
@@ -67,35 +71,42 @@ export default function LocationsPage() {
         onDelete={() => { if (selected) setDeleteId(selected.id); setSelected(null); }}
       />
 
-      {/* Create modal */}
-      <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="New Location">
-        <Input
-          label="Name"
-          value={createForm.name}
-          onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-        />
-        <Input
-          label="Category"
-          value={createForm.category}
-          onChange={(e) => setCreateForm({ ...createForm, category: e.target.value })}
-          placeholder="City, Dungeon, Wilderness…"
-        />
-        <Textarea
-          label="Description"
-          value={createForm.description}
-          onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
-          rows={4}
-        />
-        {isDM && (
-          <div className="mt-3">
-            <DmOnlyToggle value={createForm.dm_only} onChange={(v) => setCreateForm({ ...createForm, dm_only: v })} />
+      {/* Create slideout */}
+      <SlideOut
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        title="New Location"
+        headerExtra={
+          <div className="flex gap-1.5">
+            <Button size="sm" onClick={handleCreate} disabled={saving || !createForm.name.trim()}>
+              {saving ? 'Saving\u2026' : 'Save'}
+            </Button>
           </div>
-        )}
-        <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border-subtle">
-          <Button variant="ghost" onClick={() => setCreateOpen(false)}>Cancel</Button>
-          <Button onClick={handleCreate} disabled={!createForm.name.trim()}>Create</Button>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <Input
+            label="Name"
+            value={createForm.name}
+            onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+          />
+          <Input
+            label="Category"
+            value={createForm.category}
+            onChange={(e) => setCreateForm({ ...createForm, category: e.target.value })}
+            placeholder="City, Dungeon, Wilderness\u2026"
+          />
+          <Textarea
+            label="Description"
+            value={createForm.description}
+            onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
+            rows={6}
+          />
+          {isDM && (
+            <DmOnlyToggle value={createForm.dm_only} onChange={(v) => setCreateForm({ ...createForm, dm_only: v })} />
+          )}
         </div>
-      </Modal>
+      </SlideOut>
 
       {/* Delete confirmation */}
       <Modal open={deleteId !== null} onClose={() => setDeleteId(null)} title="Delete Location">
