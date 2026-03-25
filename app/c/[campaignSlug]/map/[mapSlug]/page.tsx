@@ -130,6 +130,9 @@ export default function MapPage() {
   const pinchStartMid   = useRef({ x: 0, y: 0 });
   const didTouchDrag = useRef(false);
 
+  // -- Per-pin tap tracking (pointer events) --
+  const pinTapStart = useRef<{ x: number; y: number } | null>(null);
+
   // -- Placing mode --
   const [placing, setPlacing] = useState(false);
 
@@ -334,10 +337,8 @@ export default function MapPage() {
     setPlacing(false);
   };
 
-  // -- Pin click --
-  const openMarker = (e: React.MouseEvent | React.TouchEvent, marker: MapMarker) => {
-    e.stopPropagation();
-    if (didDrag.current || didTouchDrag.current) return;
+  // -- Pin open (no event param — pointer handlers manage tap detection independently) --
+  const openMarker = (marker: MapMarker) => {
     if (marker.location_id) {
       const loc = locations.find(l => l.id === marker.location_id);
       if (loc) {
@@ -481,17 +482,20 @@ export default function MapPage() {
                 pointerEvents:   'auto',
                 zIndex:          10,
               }}
-              onClick={(e) => openMarker(e, marker)}
-              onTouchStart={(e) => {
-                // Stop the container's pan logic from hijacking pin taps
+              onPointerDown={(e) => {
                 e.stopPropagation();
-                didTouchDrag.current = false;
+                pinTapStart.current = { x: e.clientX, y: e.clientY };
               }}
-              onTouchEnd={(e) => {
+              onPointerUp={(e) => {
                 e.stopPropagation();
-                if (!didTouchDrag.current) openMarker(e, marker);
+                if (pinTapStart.current) {
+                  const dx = Math.abs(e.clientX - pinTapStart.current.x);
+                  const dy = Math.abs(e.clientY - pinTapStart.current.y);
+                  if (dx < 8 && dy < 8) openMarker(marker);
+                  pinTapStart.current = null;
+                }
               }}
-              onMouseDown={(e) => e.stopPropagation()}
+              onPointerCancel={() => { pinTapStart.current = null; }}
             >
               {/* Invisible larger tap target for mobile */}
               <div className="absolute inset-0 -m-3 md:-m-0" style={{ minWidth: 44, minHeight: 44 }} />
