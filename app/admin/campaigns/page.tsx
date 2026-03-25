@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { getSupabaseBrowser } from '@/lib/supabase-browser';
 import { PageHeader, Button, ConfirmDelete, Select } from '@/components/UI';
 import { Modal } from '@/components/Modal';
+import { SlideOut } from '@/components/SlideOut';
 import { Icon } from '@/components/Icon';
 
 interface AdminCampaign {
@@ -24,6 +25,18 @@ interface AdminUser {
   role:         string;
 }
 
+interface CampaignMember {
+  user_id:      string;
+  role:         'dm' | 'player';
+  display_name: string | null;
+  email:        string;
+}
+
+const ROLE_OPTS = [
+  { value: 'player', label: 'Player' },
+  { value: 'dm',     label: 'DM' },
+];
+
 export default function AdminCampaignsPage() {
   const [campaigns,    setCampaigns]    = useState<AdminCampaign[]>([]);
   const [loading,      setLoading]      = useState(true);
@@ -37,6 +50,14 @@ export default function AdminCampaignsPage() {
   const [saving,       setSaving]       = useState(false);
   const [migrating,    setMigrating]    = useState(false);
   const [migrateResult, setMigrateResult] = useState<{ counts: Record<string, number> } | null>(null);
+
+  // Members slideout
+  const [membersOpen,     setMembersOpen]     = useState(false);
+  const [membersFor,      setMembersFor]      = useState<AdminCampaign | null>(null);
+  const [members,         setMembers]         = useState<CampaignMember[]>([]);
+  const [membersLoading,  setMembersLoading]  = useState(false);
+  const [savingMember,    setSavingMember]    = useState<string | null>(null); // user_id being saved
+  const [removingMember,  setRemovingMember]  = useState<string | null>(null);
 
   const loadCampaigns = useCallback(async () => {
     setLoading(true);
@@ -75,7 +96,6 @@ export default function AdminCampaignsPage() {
   const openReassign = async (c: AdminCampaign) => {
     setSelected(c);
     setNewOwnerId(c.owner_id ?? '');
-    // Lazy-load the users list once
     if (users.length === 0) {
       const res = await fetch('/api/admin/users');
       if (res.ok) setUsers(await res.json());
@@ -130,6 +150,42 @@ export default function AdminCampaignsPage() {
       const body = await res.json();
       flash(body.error ?? 'Failed to delete campaign.', 'err');
     }
+  };
+
+  // -- Members slideout --
+  const openMembers = async (c: AdminCampaign) => {
+    setMembersFor(c);
+    setMembers([]);
+    setMembersOpen(true);
+    setMembersLoading(true);
+    const res = await fetch(`/api/admin/campaigns/${c.id}/members`);
+    if (res.ok) setMembers(await res.json());
+    setMembersLoading(false);
+  };
+
+  const handleRoleChange = async (campaignId: string, userId: string, role: string) => {
+    setSavingMember(userId);
+    const res = await fetch(`/api/admin/campaigns/${campaignId}/members`, {
+      method:  'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ user_id: userId, role }),
+    });
+    if (res.ok) {
+      setMembers(prev => prev.map(m => m.user_id === userId ? { ...m, role: role as 'dm' | 'player' } : m));
+    }
+    setSavingMember(null);
+  };
+
+  const handleRemoveMember = async (campaignId: string, userId: string) => {
+    setRemovingMember(userId);
+    const res = await fetch(`/api/admin/campaigns/${campaignId}/members?user_id=${userId}`, { method: 'DELETE' });
+    if (res.ok) {
+      setMembers(prev => prev.filter(m => m.user_id !== userId));
+      // Update the member count in the table
+      setCampaigns(prev => prev.map(c => c.id === campaignId ? { ...c, member_count: c.member_count - 1 } : c));
+      if (membersFor?.id === campaignId) setMembersFor(f => f ? { ...f, member_count: f.member_count - 1 } : f);
+    }
+    setRemovingMember(null);
   };
 
   return (
@@ -205,8 +261,14 @@ export default function AdminCampaignsPage() {
                   <td className="px-4 py-3 hidden sm:table-cell font-mono text-[0.65rem] text-text-secondary">
                     {c.owner_name ?? <span className="text-text-muted italic">No owner</span>}
                   </td>
-                  <td className="px-4 py-3 hidden md:table-cell font-mono text-[0.65rem] text-text-secondary">
-                    {c.member_count}
+                  <td className="px-4 py-3 hidden md:table-cell">
+                    <button
+                      onClick={() => openMembers(c)}
+                      className="font-mono text-[0.65rem] text-accent-gold hover:text-accent-gold/70 underline underline-offset-2 transition-colors"
+                      title="View members"
+                    >
+                      {c.member_count} {c.member_count === 1 ? 'member' : 'members'}
+                    </button>
                   </td>
                   <td className="px-4 py-3 hidden lg:table-cell font-mono text-[0.65rem] text-text-muted">
                     {new Date(c.created_at).toLocaleDateString()}
@@ -233,6 +295,71 @@ export default function AdminCampaignsPage() {
           </table>
         </div>
       )}
+
+      {/* ── Members slideout ── */}
+      <SlideOut
+        open={membersOpen}
+        onClose={() => setMembersOpen(false)}
+        title={membersFor?.name ?? 'Members'}
+        subtitle={`${membersFor?.member_count ?? 0} member${(membersFor?.member_count ?? 0) !== 1 ? 's' : ''}`}
+      >
+        {membersLoading ? (
+          <p className="text-text-muted font-mono text-sm">Loading members…</p>
+        ) : members.length === 0 ? (
+          <p className="text-text-muted font-mono text-sm italic">No members in this campaign.</p>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {members.map((m) => (
+              <div
+                key={m.user_id}
+                className="flex items-center gap-3 bg-card border border-border-subtle rounded-lg px-4 py-3"
+              >
+                {/* Avatar placeholder */}
+                <div className="w-8 h-8 rounded-full bg-accent-purple/20 border border-accent-purple/30
+                                flex items-center justify-center shrink-0 text-xs font-bold text-accent-purple font-mono">
+                  {(m.display_name ?? m.email).charAt(0).toUpperCase()}
+                </div>
+
+                {/* Name / email */}
+                <div className="flex-1 min-w-0">
+                  {m.display_name && (
+                    <p className="font-display text-sm font-bold text-text-primary truncate">{m.display_name}</p>
+                  )}
+                  <p className="font-mono text-[0.65rem] text-text-muted truncate">{m.email}</p>
+                </div>
+
+                {/* Role selector */}
+                <div className="shrink-0 w-28">
+                  <select
+                    value={m.role}
+                    disabled={savingMember === m.user_id}
+                    onChange={(e) => membersFor && handleRoleChange(membersFor.id, m.user_id, e.target.value)}
+                    className="w-full bg-deep border border-border-subtle rounded-lg px-2 py-1.5
+                               text-text-primary font-mono text-xs focus:outline-none focus:border-accent-purple
+                               disabled:opacity-50 cursor-pointer"
+                  >
+                    {ROLE_OPTS.map(o => (
+                      <option key={o.value} value={o.value} style={{ background: '#1a1410', color: '#e8dcc8' }}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Remove button */}
+                <button
+                  onClick={() => membersFor && handleRemoveMember(membersFor.id, m.user_id)}
+                  disabled={removingMember === m.user_id}
+                  title="Remove from campaign"
+                  className="shrink-0 text-text-muted hover:text-accent-red transition-colors disabled:opacity-50"
+                >
+                  <Icon name="person_remove" className="text-base" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </SlideOut>
 
       {/* Reassign owner modal */}
       <Modal open={modal === 'reassign'} onClose={() => setModal(null)} title="Change Campaign Owner">
