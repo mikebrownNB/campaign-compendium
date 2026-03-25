@@ -186,14 +186,29 @@ function GeneralTab({ campaign, isOwner }: { campaign: any; isOwner: boolean }) 
 }
 
 // ── Members Tab ────────────────────────────────────────────────────────────────
+const emptyNewUser = { display_name: '', email: '', password: '' };
+
 function MembersTab({ campaignId }: { campaignId: string }) {
-  const [members, setMembers] = useState<any[]>([]);
+  const [members,        setMembers]        = useState<any[]>([]);
   const [availableUsers, setAvailableUsers] = useState<{ id: string; display_name: string; email: string }[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showAdd, setShowAdd] = useState(false);
+  const [loading,        setLoading]        = useState(true);
+  const [showAdd,        setShowAdd]        = useState(false);
+  const [addMode,        setAddMode]        = useState<'existing' | 'new'>('existing');
+
+  // Existing-user mode
   const [addUserId, setAddUserId] = useState('');
-  const [addRole, setAddRole] = useState<'dm' | 'player'>('player');
+  const [addRole,   setAddRole]   = useState<'dm' | 'player'>('player');
+
+  // New-user mode
+  const [newUser,    setNewUser]    = useState(emptyNewUser);
+  const [newRole,    setNewRole]    = useState<'dm' | 'player'>('player');
+  const [createErr,  setCreateErr]  = useState<string | null>(null);
+
   const [saving, setSaving] = useState(false);
+
+  // Per-row role-edit state
+  const [editingRoleId,  setEditingRoleId]  = useState<string | null>(null);
+  const [editingRoleVal, setEditingRoleVal] = useState<'dm' | 'player'>('player');
 
   const loadMembers = useCallback(async () => {
     const [membersRes, usersRes] = await Promise.all([
@@ -201,7 +216,7 @@ function MembersTab({ campaignId }: { campaignId: string }) {
       fetch(`/api/campaigns/${campaignId}/available-users`),
     ]);
     const membersData = await membersRes.json();
-    const usersData = await usersRes.json();
+    const usersData   = await usersRes.json();
     setMembers(Array.isArray(membersData) ? membersData : []);
     setAvailableUsers(Array.isArray(usersData) ? usersData : []);
     setLoading(false);
@@ -209,17 +224,50 @@ function MembersTab({ campaignId }: { campaignId: string }) {
 
   useEffect(() => { loadMembers(); }, [loadMembers]);
 
-  const handleAdd = async () => {
+  const closeAdd = () => {
+    setShowAdd(false);
+    setAddUserId('');
+    setNewUser(emptyNewUser);
+    setCreateErr(null);
+  };
+
+  // Add an existing user to the campaign
+  const handleAddExisting = async () => {
     if (!addUserId) return;
     setSaving(true);
     try {
       await fetch(`/api/campaigns/${campaignId}/members`, {
-        method: 'POST',
+        method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: addUserId, role: addRole }),
+        body:    JSON.stringify({ user_id: addUserId, role: addRole }),
       });
-      setAddUserId('');
-      setShowAdd(false);
+      closeAdd();
+      loadMembers();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Create a new user and add them to the campaign in one step
+  const handleCreateAndAdd = async () => {
+    setCreateErr(null);
+    if (!newUser.display_name.trim() || !newUser.email.trim() || !newUser.password) {
+      setCreateErr('Display name, email, and password are required.');
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/campaigns/${campaignId}/members/create-user`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ ...newUser, role: newRole }),
+      });
+      if (!res.ok) {
+        const body = await res.json();
+        setCreateErr(body.error ?? 'Failed to create user.');
+        return;
+      }
+      closeAdd();
       loadMembers();
     } finally {
       setSaving(false);
@@ -231,68 +279,187 @@ function MembersTab({ campaignId }: { campaignId: string }) {
     loadMembers();
   };
 
+  const handleRoleChange = async (memberId: string) => {
+    await fetch(`/api/campaigns/${campaignId}/members`, {
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ id: memberId, role: editingRoleVal }),
+    });
+    setEditingRoleId(null);
+    loadMembers();
+  };
+
   const selectClass = "bg-deep border border-border-subtle rounded-lg px-3 py-2 text-text-primary font-body text-sm";
+  const tabBtn = (active: boolean) =>
+    `px-3 py-1.5 font-mono text-[0.65rem] uppercase tracking-widest rounded-md transition-colors ${
+      active ? 'bg-accent-gold/15 text-accent-gold border border-accent-gold/30' : 'text-text-muted hover:text-text-primary'
+    }`;
 
   return (
     <div className="bg-card border border-border-subtle rounded-lg p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-display text-sm text-accent-gold tracking-wider">Members</h3>
-        <Button size="sm" onClick={() => { setShowAdd(!showAdd); setAddUserId(''); }}>+ Add Member</Button>
+        <h3 className="font-display text-sm text-accent-gold tracking-wider">
+          Members {!loading && <span className="text-text-muted font-mono text-[0.6rem]">({members.length})</span>}
+        </h3>
+        <Button size="sm" onClick={() => { setShowAdd(!showAdd); if (showAdd) closeAdd(); }}>
+          {showAdd ? 'Cancel' : '+ Add Member'}
+        </Button>
       </div>
 
       {showAdd && (
-        <div className="bg-deep/50 rounded-lg p-4 mb-4 flex gap-3 items-end flex-wrap">
-          <div className="flex-1 min-w-[180px] flex flex-col gap-1">
-            <label className="font-mono text-[0.65rem] text-text-muted uppercase tracking-widest">User</label>
-            <select
-              value={addUserId}
-              onChange={e => setAddUserId(e.target.value)}
-              className={selectClass}
-            >
-              <option value="">— select a user —</option>
-              {availableUsers.map(u => (
-                <option key={u.id} value={u.id}>
-                  {u.display_name ? `${u.display_name} (${u.email})` : u.email}
-                </option>
-              ))}
-            </select>
+        <div className="bg-deep/50 rounded-lg p-4 mb-4 border border-border-subtle/50">
+          {/* Mode tabs */}
+          <div className="flex gap-2 mb-4">
+            <button className={tabBtn(addMode === 'existing')} onClick={() => { setAddMode('existing'); setCreateErr(null); }}>
+              Existing User
+            </button>
+            <button className={tabBtn(addMode === 'new')} onClick={() => { setAddMode('new'); setCreateErr(null); }}>
+              Create New User
+            </button>
           </div>
-          <div className="flex flex-col gap-1">
-            <label className="font-mono text-[0.65rem] text-text-muted uppercase tracking-widest">Role</label>
-            <select
-              value={addRole}
-              onChange={e => setAddRole(e.target.value as 'dm' | 'player')}
-              className={selectClass}
-            >
-              <option value="player">Player</option>
-              <option value="dm">DM</option>
-            </select>
-          </div>
-          <Button size="sm" onClick={handleAdd} disabled={saving || !addUserId}>{saving ? '...' : 'Add'}</Button>
+
+          {addMode === 'existing' ? (
+            <div className="flex gap-3 items-end flex-wrap">
+              <div className="flex-1 min-w-[180px] flex flex-col gap-1">
+                <label className="font-mono text-[0.65rem] text-text-muted uppercase tracking-widest">User</label>
+                <select value={addUserId} onChange={e => setAddUserId(e.target.value)} className={selectClass}>
+                  <option value="">— select a user —</option>
+                  {availableUsers.map(u => (
+                    <option key={u.id} value={u.id}>
+                      {u.display_name ? `${u.display_name} (${u.email})` : u.email}
+                    </option>
+                  ))}
+                </select>
+                {availableUsers.length === 0 && (
+                  <p className="font-mono text-[0.6rem] text-text-muted mt-1">
+                    No available users — create a new one instead.
+                  </p>
+                )}
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="font-mono text-[0.65rem] text-text-muted uppercase tracking-widest">Role</label>
+                <select value={addRole} onChange={e => setAddRole(e.target.value as 'dm' | 'player')} className={selectClass}>
+                  <option value="player">Player</option>
+                  <option value="dm">DM</option>
+                </select>
+              </div>
+              <Button size="sm" onClick={handleAddExisting} disabled={saving || !addUserId}>
+                {saving ? '…' : 'Add'}
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="font-mono text-[0.65rem] text-text-muted uppercase tracking-widest">Display Name</label>
+                  <input
+                    type="text"
+                    value={newUser.display_name}
+                    onChange={e => setNewUser({ ...newUser, display_name: e.target.value })}
+                    placeholder="e.g. Brennan"
+                    className={selectClass + ' w-full'}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="font-mono text-[0.65rem] text-text-muted uppercase tracking-widest">Email</label>
+                  <input
+                    type="email"
+                    value={newUser.email}
+                    onChange={e => setNewUser({ ...newUser, email: e.target.value })}
+                    placeholder="player@example.com"
+                    className={selectClass + ' w-full'}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="font-mono text-[0.65rem] text-text-muted uppercase tracking-widest">Temporary Password</label>
+                  <input
+                    type="password"
+                    value={newUser.password}
+                    onChange={e => setNewUser({ ...newUser, password: e.target.value })}
+                    placeholder="Share this with the player"
+                    className={selectClass + ' w-full'}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="font-mono text-[0.65rem] text-text-muted uppercase tracking-widest">Campaign Role</label>
+                  <select value={newRole} onChange={e => setNewRole(e.target.value as 'dm' | 'player')} className={selectClass}>
+                    <option value="player">Player</option>
+                    <option value="dm">DM</option>
+                  </select>
+                </div>
+              </div>
+              {createErr && (
+                <p className="font-mono text-[0.6rem] text-accent-red bg-accent-red/10 border border-accent-red/20 rounded px-3 py-2">
+                  {createErr}
+                </p>
+              )}
+              <div className="flex justify-end">
+                <Button size="sm" onClick={handleCreateAndAdd} disabled={saving}>
+                  {saving ? 'Creating…' : 'Create & Add'}
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
       {loading ? (
         <p className="text-text-muted text-sm">Loading...</p>
+      ) : members.length === 0 ? (
+        <p className="text-text-muted font-mono text-sm text-center py-6">No members yet.</p>
       ) : (
         <div className="flex flex-col gap-2">
           {members.map(m => (
-            <div key={m.id} className="flex items-center justify-between bg-deep/30 rounded-lg px-4 py-2">
-              <div>
+            <div key={m.id} className="flex items-center justify-between bg-deep/30 rounded-lg px-4 py-2 gap-3">
+              <div className="min-w-0 flex-1">
                 <span className="font-mono text-sm text-text-primary">{m.display_name || m.user_id}</span>
                 {m.email && (
                   <span className="ml-2 font-mono text-[0.6rem] text-text-muted">{m.email}</span>
                 )}
-                <span className="ml-2 font-mono text-[0.6rem] uppercase tracking-wider text-text-muted border border-border-subtle rounded px-2 py-0.5">
-                  {m.role}
-                </span>
               </div>
-              <button
-                onClick={() => handleRemove(m.id)}
-                className="font-mono text-[0.6rem] text-text-muted hover:text-accent-red transition-colors"
-              >
-                Remove
-              </button>
+              <div className="flex items-center gap-3 shrink-0">
+                {editingRoleId === m.id ? (
+                  <>
+                    <select
+                      value={editingRoleVal}
+                      onChange={e => setEditingRoleVal(e.target.value as 'dm' | 'player')}
+                      className="bg-deep border border-border-subtle rounded px-2 py-1 font-mono text-[0.65rem] text-text-primary"
+                      autoFocus
+                    >
+                      <option value="player">Player</option>
+                      <option value="dm">DM</option>
+                    </select>
+                    <button
+                      onClick={() => handleRoleChange(m.id)}
+                      className="font-mono text-[0.6rem] text-accent-gold hover:text-accent-gold/70 transition-colors"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => setEditingRoleId(null)}
+                      className="font-mono text-[0.6rem] text-text-muted hover:text-text-primary transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => { setEditingRoleId(m.id); setEditingRoleVal(m.role); }}
+                      className="font-mono text-[0.6rem] uppercase tracking-wider text-text-muted border border-border-subtle rounded px-2 py-0.5 hover:border-accent-gold/40 hover:text-accent-gold transition-colors"
+                      title="Click to change role"
+                    >
+                      {m.role}
+                    </button>
+                    <button
+                      onClick={() => handleRemove(m.id)}
+                      className="font-mono text-[0.6rem] text-text-muted hover:text-accent-red transition-colors"
+                    >
+                      Remove
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           ))}
         </div>

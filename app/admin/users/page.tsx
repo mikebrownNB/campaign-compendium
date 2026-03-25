@@ -42,9 +42,9 @@ export default function UsersPage() {
     const supabase = getSupabaseBrowser();
     supabase.auth.getUser().then(({ data }) => {
       const role = data.user?.app_metadata?.role;
-      if (role === 'admin' || role === 'super_admin') {
+      if (role === 'super_admin') {
         setIsAdmin(true);
-        setIsSuperAdmin(role === 'super_admin');
+        setIsSuperAdmin(true);
         loadUsers();
       } else {
         setLoading(false);
@@ -56,7 +56,7 @@ export default function UsersPage() {
     return (
       <div className="animate-fade-in flex flex-col items-center justify-center min-h-[40vh] gap-3">
         <Icon name="lock" className="text-4xl" />
-        <p className="font-mono text-text-muted text-sm">Admin access required.</p>
+        <p className="font-mono text-text-muted text-sm">Super admin access required.</p>
       </div>
     );
   }
@@ -250,8 +250,10 @@ export default function UsersPage() {
               className="bg-[#0a0a12] border border-border-subtle rounded-lg px-3 py-2 text-sm text-text-primary font-mono focus:outline-none focus:border-accent-gold/50 transition-colors"
             >
               <option value="member">Member</option>
-              {isSuperAdmin && <option value="admin">Admin</option>}
             </select>
+            <p className="font-mono text-[0.55rem] text-text-muted mt-1">
+              Campaign roles (DM / Player) are assigned in campaign settings.
+            </p>
           </div>
           {error && (
             <p className="font-mono text-[0.65rem] text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-3 py-2"><Icon name="close" className="text-sm align-middle" /> {error}</p>

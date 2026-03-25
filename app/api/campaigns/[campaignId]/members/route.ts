@@ -70,6 +70,39 @@ export async function POST(
   }
 }
 
+// PATCH /api/campaigns/[campaignId]/members — change a member's campaign role
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { campaignId: string } },
+) {
+  try {
+    const supabase = await getSupabaseServer();
+    const { campaignId } = params;
+    const { id, role } = await request.json();
+
+    if (!id || !role) {
+      return NextResponse.json({ error: 'id and role are required' }, { status: 400 });
+    }
+    if (role !== 'dm' && role !== 'player') {
+      return NextResponse.json({ error: 'role must be "dm" or "player"' }, { status: 400 });
+    }
+
+    const { data, error } = await supabase
+      .from('campaign_members')
+      .update({ role })
+      .eq('id', id)
+      .eq('campaign_id', campaignId)
+      .select()
+      .single();
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(data);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'Unknown error';
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
+}
+
 // DELETE /api/campaigns/[campaignId]/members?id=<membership_id>
 export async function DELETE(
   request: NextRequest,

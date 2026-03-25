@@ -66,24 +66,25 @@ export function AdminSidebar() {
 
         {/* Nav */}
         <nav className="p-4 flex flex-col gap-1 flex-1 overflow-y-auto">
-          <Link
-            href="/admin/users"
-            onClick={() => setOpen(false)}
-            className={`${linkBase} ${pathname === '/admin/users' ? linkActive : linkIdle}`}
-          >
-            <Icon name="shield_person" className="text-base" />
-            Users
-          </Link>
-
           {isSuperAdmin && (
-            <Link
-              href="/admin/campaigns"
-              onClick={() => setOpen(false)}
-              className={`${linkBase} ${pathname === '/admin/campaigns' ? linkActive : linkIdle}`}
-            >
-              <Icon name="library_books" className="text-base" />
-              Campaigns
-            </Link>
+            <>
+              <Link
+                href="/admin/users"
+                onClick={() => setOpen(false)}
+                className={`${linkBase} ${pathname === '/admin/users' ? linkActive : linkIdle}`}
+              >
+                <Icon name="shield_person" className="text-base" />
+                Users
+              </Link>
+              <Link
+                href="/admin/campaigns"
+                onClick={() => setOpen(false)}
+                className={`${linkBase} ${pathname === '/admin/campaigns' ? linkActive : linkIdle}`}
+              >
+                <Icon name="library_books" className="text-base" />
+                Campaigns
+              </Link>
+            </>
           )}
 
           {/* Divider */}

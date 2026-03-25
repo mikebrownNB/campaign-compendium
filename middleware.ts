@@ -40,7 +40,7 @@ export async function middleware(request: NextRequest) {
     // Already logged in and hitting /login -> bounce based on role
     if (user && pathname.startsWith('/login')) {
       const role = user.app_metadata?.role;
-      const dest = role === 'super_admin' || role === 'admin' ? '/admin/users' : '/';
+      const dest = role === 'super_admin' ? '/admin/users' : '/';
       return NextResponse.redirect(new URL(dest, request.url));
     }
     return supabaseResponse;
