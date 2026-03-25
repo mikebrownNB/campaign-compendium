@@ -43,6 +43,7 @@ const emptyThread = {
   tags:        [] as string[],
   description: '',
   dm_only:     false,
+  dm_notes:    '',
 };
 
 export default function ThreadsPage() {
@@ -76,6 +77,7 @@ export default function ThreadsPage() {
       tags:        t.tags || [],
       description: t.description,
       dm_only:     !!t.dm_only,
+      dm_notes:    t.dm_notes || '',
     });
     setEditId(t.id);
     setTagInput('');
@@ -220,7 +222,16 @@ export default function ThreadsPage() {
             </div>
           </div>
           {isDM && (
-            <DmOnlyToggle value={form.dm_only} onChange={(v) => setForm({ ...form, dm_only: v })} />
+            <>
+              <Textarea
+                label="DM Notes (private)"
+                value={form.dm_notes}
+                onChange={(e) => setForm({ ...form, dm_notes: e.target.value })}
+                rows={3}
+                placeholder="Notes only visible to the DM…"
+              />
+              <DmOnlyToggle value={form.dm_only} onChange={(v) => setForm({ ...form, dm_only: v })} />
+            </>
           )}
         </div>
       </SlideOut>

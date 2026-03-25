@@ -18,7 +18,7 @@ const statusStyle: Record<LootStatus, string> = {
   Lost:    'text-accent-red bg-accent-red/10 border-accent-red/30',
 };
 
-const empty = { name: '', details: '', source: '', holder: '', status: 'Carried' as LootStatus, price: '', sold_by_faction: '', dnd_beyond_url: '', dm_only: false };
+const empty = { name: '', details: '', source: '', holder: '', status: 'Carried' as LootStatus, price: '', sold_by_faction: '', dnd_beyond_url: '', dm_only: false, dm_notes: '' };
 
 type SortKey = 'name' | 'source' | 'holder' | 'price';
 type SortDir = 'asc' | 'desc';
@@ -88,7 +88,7 @@ export default function LootPage() {
 
   const openCreate = () => { setForm(empty); setEditId(null); setSlideOpen(true); };
   const openEdit   = (l: LootItem) => {
-    setForm({ name: l.name, details: l.details, source: l.source, holder: l.holder || '', status: (l.status || 'Carried') as LootStatus, price: l.price || '', sold_by_faction: l.sold_by_faction || '', dnd_beyond_url: l.dnd_beyond_url || '', dm_only: !!l.dm_only });
+    setForm({ name: l.name, details: l.details, source: l.source, holder: l.holder || '', status: (l.status || 'Carried') as LootStatus, price: l.price || '', sold_by_faction: l.sold_by_faction || '', dnd_beyond_url: l.dnd_beyond_url || '', dm_only: !!l.dm_only, dm_notes: l.dm_notes || '' });
     setEditId(l.id);
     setSlideOpen(true);
   };
@@ -337,7 +337,16 @@ export default function LootPage() {
           <Input label="D&D Beyond URL" value={form.dnd_beyond_url} onChange={(e) => setForm({ ...form, dnd_beyond_url: e.target.value })} placeholder="https://www.dndbeyond.com/magic-items/…" />
           <Textarea label="Details" value={form.details} onChange={(e) => setForm({ ...form, details: e.target.value })} rows={6} />
           {isDM && (
-            <DmOnlyToggle value={form.dm_only} onChange={(v) => setForm({ ...form, dm_only: v })} />
+            <>
+              <Textarea
+                label="DM Notes (private)"
+                value={form.dm_notes}
+                onChange={(e) => setForm({ ...form, dm_notes: e.target.value })}
+                rows={3}
+                placeholder="Notes only visible to the DM…"
+              />
+              <DmOnlyToggle value={form.dm_only} onChange={(v) => setForm({ ...form, dm_only: v })} />
+            </>
           )}
         </div>
       </SlideOut>

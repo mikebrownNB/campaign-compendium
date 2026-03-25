@@ -10,7 +10,7 @@ import { SlideOut } from '@/components/SlideOut';
 import { LocationDetailSlideOut } from '@/components/LocationDetailSlideOut';
 import { DmOnlyToggle, DmOnlyBadge } from '@/components/DmOnlyToggle';
 
-const empty = { name: '', category: '', description: '', tags: [] as string[], dm_only: false };
+const empty = { name: '', category: '', description: '', tags: [] as string[], dm_only: false, dm_notes: '' };
 
 export default function LocationsPage() {
   const { isDM } = useCampaign();
@@ -103,7 +103,16 @@ export default function LocationsPage() {
             rows={6}
           />
           {isDM && (
-            <DmOnlyToggle value={createForm.dm_only} onChange={(v) => setCreateForm({ ...createForm, dm_only: v })} />
+            <>
+              <Textarea
+                label="DM Notes (private)"
+                value={createForm.dm_notes}
+                onChange={(e) => setCreateForm({ ...createForm, dm_notes: e.target.value })}
+                rows={3}
+                placeholder="Notes only visible to the DM…"
+              />
+              <DmOnlyToggle value={createForm.dm_only} onChange={(v) => setCreateForm({ ...createForm, dm_only: v })} />
+            </>
           )}
         </div>
       </SlideOut>

@@ -18,7 +18,7 @@ const statusStyle: Record<NpcStatus, string> = {
   Unknown:  'text-text-muted bg-card border-border-subtle',
 };
 
-const empty = { name: '', role: '', faction: '', location: '', description: '', tags: [] as string[], status: 'Unknown' as NpcStatus, dm_only: false };
+const empty = { name: '', role: '', faction: '', location: '', description: '', tags: [] as string[], status: 'Unknown' as NpcStatus, dm_only: false, dm_notes: '' };
 
 type SortKey = 'name' | 'role' | 'faction' | 'location';
 type SortDir = 'asc' | 'desc';
@@ -82,7 +82,7 @@ export default function NPCsPage() {
 
   const openCreate = () => { setForm(empty); setEditId(null); setSlideOpen(true); };
   const openEdit   = (n: NPC) => {
-    setForm({ name: n.name, role: n.role, faction: n.faction || '', location: n.location || '', description: n.description, tags: n.tags || [], status: (n.status || 'Unknown') as NpcStatus, dm_only: !!n.dm_only });
+    setForm({ name: n.name, role: n.role, faction: n.faction || '', location: n.location || '', description: n.description, tags: n.tags || [], status: (n.status || 'Unknown') as NpcStatus, dm_only: !!n.dm_only, dm_notes: n.dm_notes || '' });
     setEditId(n.id);
     setSlideOpen(true);
   };
@@ -300,7 +300,16 @@ export default function NPCsPage() {
           </div>
           <Textarea label="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={6} />
           {isDM && (
-            <DmOnlyToggle value={form.dm_only} onChange={(v) => setForm({ ...form, dm_only: v })} />
+            <>
+              <Textarea
+                label="DM Notes (private)"
+                value={form.dm_notes}
+                onChange={(e) => setForm({ ...form, dm_notes: e.target.value })}
+                rows={3}
+                placeholder="Notes only visible to the DM…"
+              />
+              <DmOnlyToggle value={form.dm_only} onChange={(v) => setForm({ ...form, dm_only: v })} />
+            </>
           )}
         </div>
       </SlideOut>

@@ -13,7 +13,7 @@ import { Icon } from '@/components/Icon';
 import { DmOnlyToggle, DmOnlyBadge } from '@/components/DmOnlyToggle';
 import Link from 'next/link';
 
-const emptyFaction = { name: '', status: '', description: '', tags: [] as string[], logo_url: '', dm_only: false };
+const emptyFaction = { name: '', status: '', description: '', tags: [] as string[], logo_url: '', dm_only: false, dm_notes: '' };
 
 const STATUS_COLORS: Record<string, string> = {
   'Hostile': 'border-l-accent-red',
@@ -100,7 +100,7 @@ export default function FactionsPage() {
   };
 
   const openEdit = (f: Faction) => {
-    setForm({ name: f.name, status: f.status, description: f.description, tags: f.tags || [], logo_url: f.logo_url || '', dm_only: !!f.dm_only });
+    setForm({ name: f.name, status: f.status, description: f.description, tags: f.tags || [], logo_url: f.logo_url || '', dm_only: !!f.dm_only, dm_notes: f.dm_notes || '' });
     setEditId(f.id);
     setLogoFile(null);
     setLogoPreview(f.logo_url || '');
@@ -398,7 +398,10 @@ export default function FactionsPage() {
             </div>
           </div>
           {isDM && (
-            <DmOnlyToggle value={form.dm_only} onChange={(v) => setForm({ ...form, dm_only: v })} />
+            <>
+              <Textarea label="DM Notes (private)" value={form.dm_notes} onChange={(e) => setForm({ ...form, dm_notes: e.target.value })} rows={3} placeholder="Notes only visible to the DM…" />
+              <DmOnlyToggle value={form.dm_only} onChange={(v) => setForm({ ...form, dm_only: v })} />
+            </>
           )}
         </div>
       </SlideOut>

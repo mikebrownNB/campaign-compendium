@@ -40,6 +40,16 @@ export function createCampaignCrudHandlers(table: TableName, orderBy: string, ca
 
         const { data, error } = await query.order(orderBy);
         if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+        // Strip dm_notes from responses for non-DMs (always DM-only regardless of dm_only flag)
+        if (DM_ONLY_TABLES.includes(table) && !isDM && Array.isArray(data)) {
+          const stripped = data.map((row: Record<string, unknown>) => {
+            const { dm_notes: _, ...rest } = row;
+            return rest;
+          });
+          return NextResponse.json(stripped);
+        }
+
         return NextResponse.json(data);
       } catch (e) {
         const msg = e instanceof Error ? e.message : 'Unknown error';

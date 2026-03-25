@@ -65,7 +65,7 @@ export function LocationDetailSlideOut({
 
   const [editing, setEditing] = useState(false);
   const [saving,  setSaving]  = useState(false);
-  const [form,    setForm]    = useState({ name: '', category: '', description: '', dm_only: false });
+  const [form,    setForm]    = useState({ name: '', category: '', description: '', dm_only: false, dm_notes: '' });
 
   // Layer-2 sub-slideouts
   const [viewingNpc,     setViewingNpc]     = useState<NPC | null>(null);
@@ -79,6 +79,7 @@ export function LocationDetailSlideOut({
         category:    location.category,
         description: location.description,
         dm_only:     !!location.dm_only,
+        dm_notes:    location.dm_notes || '',
       });
       setEditing(false);
     }
@@ -121,6 +122,7 @@ export function LocationDetailSlideOut({
       description: form.description,
       tags:        location.tags ?? [],
       dm_only:     form.dm_only,
+      dm_notes:    form.dm_notes || null,
     });
     setSaving(false);
     setEditing(false);
@@ -192,7 +194,16 @@ export function LocationDetailSlideOut({
                 rows={7}
               />
               {isDM && (
-                <DmOnlyToggle value={form.dm_only} onChange={(v) => setForm({ ...form, dm_only: v })} />
+                <>
+                  <Textarea
+                    label="DM Notes (private)"
+                    value={form.dm_notes}
+                    onChange={(e) => setForm({ ...form, dm_notes: e.target.value })}
+                    rows={3}
+                    placeholder="Notes only visible to the DM…"
+                  />
+                  <DmOnlyToggle value={form.dm_only} onChange={(v) => setForm({ ...form, dm_only: v })} />
+                </>
               )}
             </div>
           ) : (
@@ -212,6 +223,15 @@ export function LocationDetailSlideOut({
                 <Tag variant="location">{location.category}</Tag>
                 {(location.tags || []).map(t => <Tag key={t} variant={t}>{t}</Tag>)}
               </div>
+
+              {/* DM Notes — only visible to DMs */}
+              {isDM && location.dm_notes && (
+                <SlideOutSection icon="lock" title="DM Notes (private)">
+                  <p className="text-text-secondary text-sm leading-relaxed whitespace-pre-wrap">
+                    {location.dm_notes}
+                  </p>
+                </SlideOutSection>
+              )}
 
               {/* Description */}
               <SlideOutSection icon="menu_book" title="Description">
