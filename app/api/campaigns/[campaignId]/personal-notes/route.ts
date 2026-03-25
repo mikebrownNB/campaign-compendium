@@ -29,20 +29,23 @@ function formatNote(
   note: Record<string, unknown>,
   isOwner: boolean,
   ownerName?: string,
+  updatedByName?: string,
 ) {
   const shares = (note.note_shares as { user_id: string }[] | null) ?? [];
   return {
-    id:              note.id,
-    campaign_id:     note.campaign_id,
-    user_id:         note.user_id,
-    title:           note.title,
-    content:         note.content,
-    shared_with_all: note.shared_with_all ?? false,
-    shared_with:     shares.map((s) => s.user_id),
-    is_owner:        isOwner,
-    owner_name:      ownerName,
-    created_at:      note.created_at,
-    updated_at:      note.updated_at,
+    id:               note.id,
+    campaign_id:      note.campaign_id,
+    user_id:          note.user_id,
+    title:            note.title,
+    content:          note.content,
+    shared_with_all:  note.shared_with_all ?? false,
+    shared_with:      shares.map((s) => s.user_id),
+    is_owner:         isOwner,
+    owner_name:       ownerName,
+    created_at:       note.created_at,
+    updated_at:       note.updated_at,
+    updated_by:       note.updated_by,
+    updated_by_name:  updatedByName,
   };
 }
 
@@ -92,14 +95,21 @@ export async function GET(
       sharedRows = (data ?? []) as Record<string, unknown>[];
     }
 
-    // Resolve owner display names for shared notes
-    const ownerIds = Array.from(new Set(sharedRows.map((n) => n.user_id as string)));
-    const ownerMap = await resolveNames(ownerIds);
+    // Resolve display names for note owners and last editors
+    const allRows = [...(ownRows ?? []) as Record<string, unknown>[], ...sharedRows];
+    const resolveIds = Array.from(new Set([
+      ...sharedRows.map((n) => n.user_id as string),
+      ...allRows.map((n) => n.updated_by as string).filter(Boolean),
+    ]));
+    const nameMap = await resolveNames(resolveIds);
 
     const result = [
-      ...(ownRows ?? []).map((n) => formatNote(n as Record<string, unknown>, true)),
+      ...(ownRows ?? []).map((n) => {
+        const row = n as Record<string, unknown>;
+        return formatNote(row, true, undefined, row.updated_by ? nameMap[row.updated_by as string] : undefined);
+      }),
       ...sharedRows.map((n) =>
-        formatNote(n, false, ownerMap[n.user_id as string] ?? 'Unknown'),
+        formatNote(n, false, nameMap[n.user_id as string] ?? 'Unknown', n.updated_by ? nameMap[n.updated_by as string] : undefined),
       ),
     ];
 
@@ -194,6 +204,7 @@ export async function PUT(
       title,
       content,
       updated_at: new Date().toISOString(),
+      updated_by: userId,
     };
     if (isOwner) {
       updateFields.shared_with_all = shared_with_all ?? false;

@@ -191,6 +191,8 @@ export interface PersonalNote {
   owner_name?: string;     // display name of the sharer — set when is_owner=false
   created_at?: string;
   updated_at?: string;
+  updated_by?: string;       // user_id of last editor
+  updated_by_name?: string;  // resolved display name
 }
 
 export interface NoteUser {

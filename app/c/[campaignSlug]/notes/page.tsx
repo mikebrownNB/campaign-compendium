@@ -95,6 +95,7 @@ export default function NotesPage() {
   // Toast notifications
   const [toasts,    setToasts]    = useState<Toast[]>([]);
   const suppressRef = useRef<Set<string>>(new Set()); // note IDs we just saved ourselves
+  const membersRef  = useRef<NoteUser[]>([]);          // latest members for realtime handler
 
   const addToast = useCallback((message: string) => {
     const id = Math.random().toString(36).slice(2);
@@ -133,12 +134,12 @@ export default function NotesPage() {
       .then((r) => r.json())
       .then((data: { id: string; user_id: string; display_name?: string; email?: string }[]) => {
         if (!Array.isArray(data)) return;
-        setMembers(
-          data.map((m) => ({
-            id:           m.user_id,
-            display_name: m.display_name || m.email || m.user_id,
-          })),
-        );
+        const mapped = data.map((m) => ({
+          id:           m.user_id,
+          display_name: m.display_name || m.email || m.user_id,
+        }));
+        setMembers(mapped);
+        membersRef.current = mapped;
       });
 
     // ── Realtime: watch for note updates by other users ──────────────────────
@@ -148,7 +149,7 @@ export default function NotesPage() {
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'personal_notes' },
         (payload) => {
-          const updated = payload.new as { id: string; title: string; content: string; user_id: string; updated_at: string };
+          const updated = payload.new as { id: string; title: string; content: string; user_id: string; updated_at: string; updated_by?: string };
 
           // Skip events we triggered ourselves
           if (suppressRef.current.has(updated.id)) {
@@ -161,11 +162,14 @@ export default function NotesPage() {
             const existing = prev.find((n) => n.id === updated.id);
             if (!existing) return prev;
 
-            addToast(`"${updated.title}" was updated`);
+            const editorName = updated.updated_by
+              ? (membersRef.current.find((m) => m.id === updated.updated_by)?.display_name ?? 'Someone')
+              : 'Someone';
+            addToast(`"${updated.title}" was updated by ${editorName}`);
 
             return prev.map((n) =>
               n.id === updated.id
-                ? { ...n, title: updated.title, content: updated.content, updated_at: updated.updated_at }
+                ? { ...n, title: updated.title, content: updated.content, updated_at: updated.updated_at, updated_by: updated.updated_by, updated_by_name: updated.updated_by ? (membersRef.current.find((m) => m.id === updated.updated_by)?.display_name) : undefined }
                 : n,
             );
           });
@@ -405,6 +409,13 @@ export default function NotesPage() {
             rows={10}
             placeholder="Write your notes here…"
           />
+
+          {slideMode === 'edit' && editNote?.updated_at && (
+            <p className="font-mono text-[0.6rem] text-text-muted/60">
+              Last updated {formatDate(editNote.updated_at)}
+              {editNote.updated_by_name && ` by ${editNote.updated_by_name}`}
+            </p>
+          )}
 
           {saveError && (
             <p className="font-mono text-[0.65rem] text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-3 py-2">
