@@ -68,9 +68,15 @@ export async function POST(request: NextRequest) {
   const siteUrl     = process.env.NEXT_PUBLIC_SITE_URL ?? site_url;
   const fromAddress = process.env.EMAIL_FROM ?? 'Campaign Compendium <noreply@campaigncompendium.app>';
 
-  // Build the Supabase verification URL
-  const verifyUrl = (type: string) =>
-    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/verify?token=${token_hash}&type=${type}&redirect_to=${encodeURIComponent(redirect_to || siteUrl)}`;
+  // Build a verify URL that routes through the app's own domain.
+  // /auth/confirm calls supabase.auth.verifyOtp() then redirects onward,
+  // so the link in the email shows the app's domain rather than supabase.co.
+  const verifyUrl = (type: string, finalRedirect?: string) => {
+    const params = new URLSearchParams({ token_hash, type });
+    const dest   = finalRedirect ?? redirect_to;
+    if (dest) params.set('redirect_to', dest);
+    return `${siteUrl}/auth/confirm?${params.toString()}`;
+  };
 
   try {
     switch (email_action_type) {
@@ -86,7 +92,7 @@ export async function POST(request: NextRequest) {
       }
 
       case 'recovery': {
-        const html = await render(ResetPasswordEmail({ displayName, resetUrl: verifyUrl('recovery') }));
+        const html = await render(ResetPasswordEmail({ displayName, resetUrl: verifyUrl('recovery', `${siteUrl}/auth/reset-password`) }));
         await resend.emails.send({
           from:    fromAddress,
           to:      user.email,
