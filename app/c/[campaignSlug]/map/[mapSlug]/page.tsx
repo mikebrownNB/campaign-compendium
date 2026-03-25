@@ -482,20 +482,23 @@ export default function MapPage() {
                 pointerEvents:   'auto',
                 zIndex:          10,
               }}
-              onPointerDown={(e) => {
+              onTouchStart={(e) => {
                 e.stopPropagation();
-                pinTapStart.current = { x: e.clientX, y: e.clientY };
+                const t = e.touches[0];
+                pinTapStart.current = { x: t.clientX, y: t.clientY };
               }}
-              onPointerUp={(e) => {
+              onTouchEnd={(e) => {
                 e.stopPropagation();
-                if (pinTapStart.current) {
-                  const dx = Math.abs(e.clientX - pinTapStart.current.x);
-                  const dy = Math.abs(e.clientY - pinTapStart.current.y);
+                if (pinTapStart.current && e.changedTouches.length > 0) {
+                  const t = e.changedTouches[0];
+                  const dx = Math.abs(t.clientX - pinTapStart.current.x);
+                  const dy = Math.abs(t.clientY - pinTapStart.current.y);
                   if (dx < 8 && dy < 8) openMarker(marker);
-                  pinTapStart.current = null;
                 }
+                pinTapStart.current = null;
               }}
-              onPointerCancel={() => { pinTapStart.current = null; }}
+              onClick={(e) => { e.stopPropagation(); openMarker(marker); }}
+              onMouseDown={(e) => e.stopPropagation()}
             >
               {/* Invisible larger tap target for mobile */}
               <div className="absolute inset-0 -m-3 md:-m-0" style={{ minWidth: 44, minHeight: 44 }} />
