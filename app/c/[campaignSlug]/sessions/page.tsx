@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useCampaignCrud } from '@/lib/useCampaignCrud';
+import { useCampaign } from '@/lib/CampaignContext';
 import type { Session, NPC } from '@/lib/types';
 import { PageHeader, Button, Input, Textarea, EmptyState, ConfirmDelete } from '@/components/UI';
 import { Modal } from '@/components/Modal';
@@ -37,7 +38,19 @@ function linkNpcs(text: string, npcs: NPC[], onNpcClick: (npc: NPC) => void): Re
 
 const empty = { number: 0, title: '', real_date: '', ingame_date: '', summary: '', doc_url: '' };
 
+interface ScanEntityResults { npcs: string[]; loot: string[]; threads: string[]; locations: string[]; factions: string[] }
+interface ScanResult { created: ScanEntityResults; skipped: ScanEntityResults }
+
+const ENTITY_LABELS: { key: keyof ScanEntityResults; icon: string; label: string }[] = [
+  { key: 'npcs', icon: 'groups', label: 'NPCs' },
+  { key: 'loot', icon: 'paid', label: 'Loot' },
+  { key: 'threads', icon: 'forum', label: 'Threads' },
+  { key: 'locations', icon: 'location_on', label: 'Locations' },
+  { key: 'factions', icon: 'shield', label: 'Factions' },
+];
+
 export default function SessionsPage() {
+  const { campaign } = useCampaign();
   const { items, loading, create, update, remove } = useCampaignCrud<Session>('sessions');
   const { items: npcs } = useCampaignCrud<NPC>('npcs');
   const [modal, setModal] = useState<'create' | 'edit' | null>(null);
@@ -46,6 +59,31 @@ export default function SessionsPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [viewingNpc, setViewingNpc] = useState<NPC | null>(null);
+
+  // Scan state
+  const [scanningId, setScanningId] = useState<string | null>(null);
+  const [scanResults, setScanResults] = useState<Record<string, ScanResult>>({});
+  const [scanError, setScanError] = useState<string | null>(null);
+
+  const handleScan = async (session: Session) => {
+    if (!session.doc_url) return;
+    setScanningId(session.id);
+    setScanError(null);
+    try {
+      const res = await fetch(`/api/campaigns/${campaign.id}/scan-doc`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ doc_url: session.doc_url }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Scan failed');
+      setScanResults(prev => ({ ...prev, [session.id]: data }));
+    } catch (e) {
+      setScanError(e instanceof Error ? e.message : 'Scan failed');
+    } finally {
+      setScanningId(null);
+    }
+  };
 
   const openCreate = () => { setForm({ ...empty, number: items.length > 0 ? Math.max(...items.map(s => s.number)) + 1 : 1 }); setEditId(null); setModal('create'); };
   const openEdit = (s: Session) => { setForm({ number: s.number, title: s.title, real_date: s.real_date, ingame_date: s.ingame_date, summary: s.summary, doc_url: s.doc_url || '' }); setEditId(s.id); setModal('edit'); };
@@ -92,7 +130,7 @@ export default function SessionsPage() {
                   <p className="text-text-secondary text-base leading-relaxed mt-3">
                     {linkNpcs(s.summary, npcs, setViewingNpc)}
                   </p>
-                  <div className="flex items-center gap-4 mt-3">
+                  <div className="flex items-center gap-4 mt-3 flex-wrap">
                     {s.doc_url && (
                       <a
                         href={s.doc_url}
@@ -104,8 +142,69 @@ export default function SessionsPage() {
                         <Icon name="description" className="text-base align-middle" /> Full Notes ↗
                       </a>
                     )}
+                    {s.doc_url && (
+                      <button
+                        disabled={scanningId === s.id}
+                        onClick={(e) => { e.stopPropagation(); handleScan(s); }}
+                        className="text-accent-teal hover:text-accent-gold text-base font-mono transition-colors disabled:opacity-50 disabled:cursor-wait flex items-center gap-1"
+                      >
+                        <Icon name={scanningId === s.id ? 'progress_activity' : 'document_scanner'} className={`text-base ${scanningId === s.id ? 'animate-spin' : ''}`} />
+                        {scanningId === s.id ? 'Scanning…' : 'Scan Document'}
+                      </button>
+                    )}
                     <button onClick={() => setDeleteId(s.id)} className="text-text-muted hover:text-accent-red text-base font-mono">Delete session</button>
                   </div>
+
+                  {/* Scan error */}
+                  {scanError && scanningId === null && expandedId === s.id && (
+                    <div className="mt-3 bg-accent-red/10 border border-accent-red/30 rounded-lg px-4 py-3 flex items-center justify-between">
+                      <p className="font-mono text-xs text-accent-red">{scanError}</p>
+                      <button onClick={() => setScanError(null)} className="text-accent-red/60 hover:text-accent-red"><Icon name="close" className="text-sm" /></button>
+                    </div>
+                  )}
+
+                  {/* Scan results */}
+                  {scanResults[s.id] && (
+                    <div className="mt-3 bg-card border border-accent-teal/30 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-display text-sm font-bold text-accent-teal flex items-center gap-2">
+                          <Icon name="check_circle" className="text-base" /> Scan Complete
+                        </h4>
+                        <button
+                          onClick={() => setScanResults(prev => { const next = { ...prev }; delete next[s.id]; return next; })}
+                          className="text-text-muted hover:text-text-primary"
+                        >
+                          <Icon name="close" className="text-sm" />
+                        </button>
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        {ENTITY_LABELS.map(({ key, icon, label }) => {
+                          const created = scanResults[s.id].created[key];
+                          const skipped = scanResults[s.id].skipped[key];
+                          if (created.length === 0 && skipped.length === 0) return null;
+                          return (
+                            <div key={key} className="font-mono text-xs">
+                              <Icon name={icon} className="text-sm align-middle mr-1 text-text-muted" />
+                              {created.length > 0 && (
+                                <span className="text-accent-teal">
+                                  +{created.length} {label}: {created.join(', ')}
+                                </span>
+                              )}
+                              {created.length > 0 && skipped.length > 0 && <span className="text-text-muted mx-1">·</span>}
+                              {skipped.length > 0 && (
+                                <span className="text-text-muted">
+                                  {skipped.length} skipped: {skipped.join(', ')}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                        {ENTITY_LABELS.every(({ key }) => scanResults[s.id].created[key].length === 0 && scanResults[s.id].skipped[key].length === 0) && (
+                          <p className="text-text-muted font-mono text-xs">No entities found in this document.</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
