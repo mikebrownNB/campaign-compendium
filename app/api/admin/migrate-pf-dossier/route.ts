@@ -25,10 +25,26 @@ async function requireSuperAdmin() {
   return user;
 }
 
+/** Replace literal \uXXXX escape sequences in strings with the real characters. */
+function unescapeUnicode(value: unknown): unknown {
+  if (typeof value === 'string') {
+    return value.replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) =>
+      String.fromCharCode(parseInt(hex, 16)),
+    );
+  }
+  if (Array.isArray(value)) return value.map(unescapeUnicode);
+  if (value !== null && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([k, v]) => [k, unescapeUnicode(v)]),
+    );
+  }
+  return value;
+}
+
 function strip<T extends Record<string, unknown>>(rows: T[], ...extra: string[]): Omit<T, 'created_at' | 'updated_at'>[] {
   const drop = ['created_at', 'updated_at', ...extra];
   return rows.map(row => {
-    const r = { ...row };
+    const r = unescapeUnicode({ ...row }) as Record<string, unknown>;
     for (const k of drop) delete r[k];
     return r;
   }) as Omit<T, 'created_at' | 'updated_at'>[];
