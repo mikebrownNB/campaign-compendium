@@ -39,7 +39,7 @@ function linkNpcs(text: string, npcs: NPC[], onNpcClick: (npc: NPC) => void): Re
 const empty = { number: 0, title: '', real_date: '', ingame_date: '', summary: '', doc_url: '' };
 
 interface ScanEntityResults { npcs: string[]; loot: string[]; threads: string[]; locations: string[]; factions: string[] }
-interface ScanResult { created: ScanEntityResults; skipped: ScanEntityResults }
+interface ScanResult { summary?: string; created: ScanEntityResults; skipped: ScanEntityResults }
 
 const ENTITY_LABELS: { key: keyof ScanEntityResults; icon: string; label: string }[] = [
   { key: 'npcs', icon: 'groups', label: 'NPCs' },
@@ -78,6 +78,10 @@ export default function SessionsPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Scan failed');
       setScanResults(prev => ({ ...prev, [session.id]: data }));
+      // Auto-save generated summary if the session doesn't already have one
+      if (data.summary && !session.summary) {
+        await update({ id: session.id, summary: data.summary });
+      }
     } catch (e) {
       setScanError(e instanceof Error ? e.message : 'Scan failed');
     } finally {
@@ -177,6 +181,12 @@ export default function SessionsPage() {
                           <Icon name="close" className="text-sm" />
                         </button>
                       </div>
+                      {scanResults[s.id].summary && (
+                        <p className="text-text-secondary text-sm leading-relaxed mb-3 pb-3 border-b border-border-subtle">
+                          <span className="font-display text-xs text-text-muted uppercase tracking-widest block mb-1">Generated Summary</span>
+                          {scanResults[s.id].summary}
+                        </p>
+                      )}
                       <div className="flex flex-col gap-1.5">
                         {ENTITY_LABELS.map(({ key, icon, label }) => {
                           const created = scanResults[s.id].created[key];

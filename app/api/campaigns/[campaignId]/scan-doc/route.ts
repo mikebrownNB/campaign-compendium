@@ -8,10 +8,11 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const SYSTEM_PROMPT = `You are an assistant that extracts structured D&D campaign entities from session notes.
 
-Given the full text of a D&D session document, extract every entity you can find into the following categories. Return ONLY valid JSON, no markdown fences, no explanation.
+Given the full text of a D&D session document, extract every entity you can find and generate a session summary. Return ONLY valid JSON, no markdown fences, no explanation.
 
 Schema:
 {
+  "summary": string,
   "npcs": [{ "name": string, "role": string, "faction": string|null, "location": string|null, "description": string, "tags": string[], "status": "Alive"|"Deceased"|"Unknown" }],
   "loot": [{ "name": string, "details": string, "source": string, "holder": string|null, "status": "Carried"|"Known"|"Sold"|"Lost" }],
   "threads": [{ "title": string, "status": "urgent"|"active"|"dormant"|"resolved", "priority": "urgent"|"active"|"cosmic"|"personal"|"mystery", "tags": string[], "description": string }],
@@ -20,6 +21,7 @@ Schema:
 }
 
 Rules:
+- "summary" should be a concise 2-4 sentence narrative summary of the key events of the session, written in past tense.
 - Extract ALL named NPCs, items, plot threads, locations, and factions mentioned in the text.
 - For NPCs, infer role/faction/location from context if possible. Default status to "Alive" unless death is mentioned.
 - For loot, "source" is who/where the item came from. Default status to "Carried" unless the text says otherwise.
@@ -122,6 +124,7 @@ export async function POST(
     // Call Claude
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     let extracted: {
+      summary?: string;
       npcs: { name: string; role: string; faction: string | null; location: string | null; description: string; tags: string[]; status: string }[];
       loot: { name: string; details: string; source: string; holder: string | null; status: string }[];
       threads: { name?: string; title: string; status: string; priority: string; tags: string[]; description: string }[];
@@ -261,6 +264,7 @@ export async function POST(
     }
 
     return NextResponse.json({
+      summary: extracted.summary || null,
       created: {
         npcs:      npcResult.created.map(n => n.name),
         loot:      lootResult.created.map(l => l.name),
