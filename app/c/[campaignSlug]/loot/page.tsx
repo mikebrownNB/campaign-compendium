@@ -171,6 +171,7 @@ export default function LootPage() {
       ) : processed.length === 0 ? (
         <EmptyState icon="paid" message={search || activeFilterCount > 0 || statusFiltered ? 'No items match your filters.' : 'No loot yet. Create your first item.'} />
       ) : (
+        <>
         {/* Mobile card view */}
         <div className="md:hidden flex flex-col gap-3">
           {processed.map((l) => {
@@ -274,6 +275,7 @@ export default function LootPage() {
             </tbody>
           </table>
         </div>
+        </>
       )}
 
       {/* Edit / Create Slideout */}

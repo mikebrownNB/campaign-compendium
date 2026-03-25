@@ -151,6 +151,7 @@ export default function NPCsPage() {
       ) : processed.length === 0 ? (
         <EmptyState icon="groups" message={search || activeFilterCount > 0 ? 'No NPCs match your filters.' : 'No NPCs yet. Create your first one.'} />
       ) : (
+        <>
         {/* Mobile card view */}
         <div className="md:hidden flex flex-col gap-3">
           {processed.map((n) => {
@@ -239,6 +240,7 @@ export default function NPCsPage() {
             </tbody>
           </table>
         </div>
+        </>
       )}
 
       {/* \u2500\u2500 Edit / Create Slideout \u2500\u2500 */}
