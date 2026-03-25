@@ -35,11 +35,11 @@ export default function LootPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   // Search & filter
-  const [search,       setSearch]       = useState('');
-  const [filterStatus,  setFilterStatus]  = useState('');
-  const [filterSource,  setFilterSource]  = useState('');
-  const [filterHolder,  setFilterHolder]  = useState('');
-  const [filterFaction, setFilterFaction] = useState('');
+  const [search,        setSearch]        = useState('');
+  const [filterStatuses, setFilterStatuses] = useState<Set<LootStatus>>(new Set(['Carried', 'Known']));
+  const [filterSource,   setFilterSource]   = useState('');
+  const [filterHolder,   setFilterHolder]   = useState('');
+  const [filterFaction,  setFilterFaction]  = useState('');
 
   // Sort
   const [sortKey, setSortKey] = useState<SortKey>('name');
@@ -59,7 +59,7 @@ export default function LootPage() {
         || (l.holder || '').toLowerCase().includes(q)
         || (l.price || '').toLowerCase().includes(q)
         || (l.sold_by_faction || '').toLowerCase().includes(q);
-      const matchesStatus  = !filterStatus  || (l.status || 'Carried') === filterStatus;
+      const matchesStatus  = filterStatuses.size === LOOT_STATUSES.length || filterStatuses.has((l.status || 'Carried') as LootStatus);
       const matchesSource  = !filterSource  || l.source === filterSource;
       const matchesHolder  = !filterHolder  || (l.holder || '') === filterHolder;
       const matchesFaction = !filterFaction || (l.sold_by_faction || '') === filterFaction;
@@ -71,7 +71,7 @@ export default function LootPage() {
       return av < bv ? (sortDir === 'asc' ? -1 : 1) : av > bv ? (sortDir === 'asc' ? 1 : -1) : 0;
     });
     return result;
-  }, [items, search, filterStatus, filterSource, filterHolder, filterFaction, sortKey, sortDir]);
+  }, [items, search, filterStatuses, filterSource, filterHolder, filterFaction, sortKey, sortDir]);
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
@@ -100,7 +100,8 @@ export default function LootPage() {
     setSlideOpen(false);
   };
 
-  const activeFilterCount = [filterStatus, filterSource, filterHolder, filterFaction].filter(Boolean).length;
+  const statusFiltered = filterStatuses.size < LOOT_STATUSES.length;
+  const activeFilterCount = [statusFiltered, !!filterSource, !!filterHolder, !!filterFaction].filter(Boolean).length;
 
   return (
     <div className="animate-fade-in">
@@ -126,11 +127,24 @@ export default function LootPage() {
           )}
         </div>
         <div className="flex gap-3 flex-wrap items-center">
-          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-            className="bg-card border border-border-subtle rounded-lg px-3 py-1.5 text-sm font-mono text-text-secondary focus:outline-none focus:border-accent-purple transition-colors">
-            <option value="">All Statuses</option>
-            {LOOT_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
+          {/* Status multiselect chips */}
+          <div className="flex gap-1">
+            {LOOT_STATUSES.map(s => {
+              const active = filterStatuses.has(s);
+              const toggle = () => {
+                const next = new Set(filterStatuses);
+                if (active) next.delete(s); else next.add(s);
+                setFilterStatuses(next);
+              };
+              return (
+                <button key={s} onClick={toggle}
+                  className={`font-mono text-xs border rounded px-2 py-0.5 transition-colors ${active ? statusStyle[s] : 'text-text-muted/40 bg-transparent border-border-subtle/40 hover:border-border-subtle'}`}
+                >
+                  {s}
+                </button>
+              );
+            })}
+          </div>
           {[
             { value: filterSource,  set: setFilterSource,  label: 'All Sources',  opts: uniqueSources },
             { value: filterHolder,  set: setFilterHolder,  label: 'All Holders',  opts: uniqueHolders },
@@ -143,7 +157,7 @@ export default function LootPage() {
             </select>
           ))}
           {activeFilterCount > 0 && (
-            <button onClick={() => { setFilterStatus(''); setFilterSource(''); setFilterHolder(''); setFilterFaction(''); }}
+            <button onClick={() => { setFilterStatuses(new Set(LOOT_STATUSES)); setFilterSource(''); setFilterHolder(''); setFilterFaction(''); }}
               className="font-mono text-xs text-accent-red hover:text-accent-red/80 transition-colors">
               Clear {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}
             </button>
@@ -155,7 +169,7 @@ export default function LootPage() {
       {loading ? (
         <p className="text-text-muted font-mono text-sm">Loading...</p>
       ) : processed.length === 0 ? (
-        <EmptyState icon="paid" message={search || activeFilterCount > 0 ? 'No items match your filters.' : 'No loot yet. Create your first item.'} />
+        <EmptyState icon="paid" message={search || activeFilterCount > 0 || statusFiltered ? 'No items match your filters.' : 'No loot yet. Create your first item.'} />
       ) : (
         <div className="overflow-x-auto border border-border-subtle rounded-lg">
           <table className="w-full border-collapse min-w-[900px]">
