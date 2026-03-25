@@ -72,6 +72,8 @@ export type EventType = 'combat' | 'travel' | 'social' | 'quest' | 'loot' | 'fac
 export const EVENT_TYPES: EventType[] = ['combat', 'travel', 'social', 'quest', 'loot', 'faction', 'festival', 'downtime'];
 
 // ===== NPC Types =====
+export type NpcStatus = 'Alive' | 'Deceased' | 'Unknown';
+
 export interface NPC {
   id: string;
   campaign_id: string;
@@ -81,6 +83,7 @@ export interface NPC {
   location?: string;
   description: string;
   tags: string[];
+  status: NpcStatus;
   created_at?: string;
   updated_at?: string;
 }

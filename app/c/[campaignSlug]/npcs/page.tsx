@@ -2,13 +2,21 @@
 
 import { useState, useMemo } from 'react';
 import { useCampaignCrud } from '@/lib/useCampaignCrud';
-import type { NPC } from '@/lib/types';
+import type { NPC, NpcStatus } from '@/lib/types';
 import { PageHeader, Button, Tag, Input, Textarea, EmptyState, ConfirmDelete } from '@/components/UI';
 import { Modal } from '@/components/Modal';
 import { SlideOut } from '@/components/SlideOut';
 import { Icon } from '@/components/Icon';
 
-const empty = { name: '', role: '', faction: '', location: '', description: '', tags: [] as string[] };
+const STATUS_OPTIONS: NpcStatus[] = ['Alive', 'Deceased', 'Unknown'];
+
+const statusStyle: Record<NpcStatus, string> = {
+  Alive:    'text-green-400 bg-green-400/10 border-green-400/30',
+  Deceased: 'text-accent-red bg-accent-red/10 border-accent-red/30',
+  Unknown:  'text-text-muted bg-card border-border-subtle',
+};
+
+const empty = { name: '', role: '', faction: '', location: '', description: '', tags: [] as string[], status: 'Unknown' as NpcStatus };
 
 type SortKey = 'name' | 'role' | 'faction' | 'location';
 type SortDir = 'asc' | 'desc';
@@ -30,6 +38,7 @@ export default function NPCsPage() {
   const [filterFaction,  setFilterFaction]  = useState('');
   const [filterLocation, setFilterLocation] = useState('');
   const [filterRole,     setFilterRole]     = useState('');
+  const [filterStatus,   setFilterStatus]   = useState('');
 
   // Sort
   const [sortKey, setSortKey] = useState<SortKey>('name');
@@ -46,7 +55,8 @@ export default function NPCsPage() {
       const matchesFaction  = !filterFaction  || (n.faction  || '') === filterFaction;
       const matchesLocation = !filterLocation || (n.location || '') === filterLocation;
       const matchesRole     = !filterRole     || n.role === filterRole;
-      return matchesSearch && matchesFaction && matchesLocation && matchesRole;
+      const matchesStatus   = !filterStatus   || (n.status || 'Unknown') === filterStatus;
+      return matchesSearch && matchesFaction && matchesLocation && matchesRole && matchesStatus;
     });
     result.sort((a, b) => {
       const av = (a[sortKey] || '').toLowerCase();
@@ -68,7 +78,7 @@ export default function NPCsPage() {
 
   const openCreate = () => { setForm(empty); setEditId(null); setSlideOpen(true); };
   const openEdit   = (n: NPC) => {
-    setForm({ name: n.name, role: n.role, faction: n.faction || '', location: n.location || '', description: n.description, tags: n.tags || [] });
+    setForm({ name: n.name, role: n.role, faction: n.faction || '', location: n.location || '', description: n.description, tags: n.tags || [], status: (n.status || 'Unknown') as NpcStatus });
     setEditId(n.id);
     setSlideOpen(true);
   };
@@ -83,7 +93,7 @@ export default function NPCsPage() {
     setSlideOpen(false);
   };
 
-  const activeFilterCount = [filterFaction, filterLocation, filterRole].filter(Boolean).length;
+  const activeFilterCount = [filterFaction, filterLocation, filterRole, filterStatus].filter(Boolean).length;
 
   return (
     <div className="animate-fade-in">
@@ -120,8 +130,13 @@ export default function NPCsPage() {
               {opts.map(o => <option key={o} value={o}>{o}</option>)}
             </select>
           ))}
+          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
+            className="bg-card border border-border-subtle rounded-lg px-3 py-1.5 text-sm font-mono text-text-secondary focus:outline-none focus:border-accent-purple transition-colors">
+            <option value="">All Statuses</option>
+            {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
           {activeFilterCount > 0 && (
-            <button onClick={() => { setFilterFaction(''); setFilterLocation(''); setFilterRole(''); }}
+            <button onClick={() => { setFilterFaction(''); setFilterLocation(''); setFilterRole(''); setFilterStatus(''); }}
               className="font-mono text-xs text-accent-red hover:text-accent-red/80 transition-colors">
               Clear {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}
             </button>
@@ -147,6 +162,7 @@ export default function NPCsPage() {
                     {col.charAt(0).toUpperCase() + col.slice(1)} <SortIcon col={col} />
                   </th>
                 ))}
+                <th className="text-left p-3 font-display text-[0.65rem] tracking-wider uppercase text-accent-purple bg-accent-purple/5 border-b border-border-subtle">Status</th>
                 <th className="text-left p-3 font-display text-[0.65rem] tracking-wider uppercase text-accent-purple bg-accent-purple/5 border-b border-border-subtle">Description</th>
                 <th className="w-10 bg-accent-purple/5 border-b border-border-subtle rounded-tr-lg" />
               </tr>
@@ -173,6 +189,12 @@ export default function NPCsPage() {
                     {n.location
                       ? <span className="font-mono text-xs text-accent-blue">{n.location}</span>
                       : <span className="text-text-muted/40 font-mono text-xs">—</span>}
+                  </td>
+                  <td className="p-3">
+                    {(() => {
+                      const s = (n.status || 'Unknown') as NpcStatus;
+                      return <span className={`font-mono text-xs border rounded px-2 py-0.5 ${statusStyle[s]}`}>{s}</span>;
+                    })()}
                   </td>
                   <td className="p-3 max-w-xs">
                     <p className="text-text-secondary text-xs line-clamp-2">{n.description}</p>
@@ -213,9 +235,21 @@ export default function NPCsPage() {
           <Input label="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <div className="grid grid-cols-2 gap-3">
             <Input label="Role" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} placeholder="Broker, Ally, Merchant…" />
-            <Input label="Faction" value={form.faction} onChange={(e) => setForm({ ...form, faction: e.target.value })} placeholder="Optional" />
+            <div className="flex flex-col gap-1">
+              <label className="font-mono text-[0.65rem] text-text-muted uppercase tracking-widest">Status</label>
+              <select
+                value={form.status}
+                onChange={(e) => setForm({ ...form, status: e.target.value as NpcStatus })}
+                className="bg-[#0a0a12] border border-border-subtle rounded-lg px-3 py-2 text-sm text-text-primary font-mono focus:outline-none focus:border-accent-gold/50 transition-colors"
+              >
+                {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
           </div>
-          <Input label="Location" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="Optional" />
+          <div className="grid grid-cols-2 gap-3">
+            <Input label="Faction" value={form.faction} onChange={(e) => setForm({ ...form, faction: e.target.value })} placeholder="Optional" />
+            <Input label="Location" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="Optional" />
+          </div>
           <Textarea label="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={6} />
         </div>
       </SlideOut>
