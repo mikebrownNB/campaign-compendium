@@ -35,6 +35,23 @@ export async function PATCH(
 
   const body = await request.json();
 
+  // ── Email change (super_admin only) ────────────────────────────────────────
+  if ('email' in body) {
+    if (admin.app_metadata?.role !== 'super_admin') {
+      return NextResponse.json({ error: 'Only super admins can change email addresses.' }, { status: 403 });
+    }
+    const newEmail = (body.email as string)?.trim().toLowerCase();
+    if (!newEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
+      return NextResponse.json({ error: 'A valid email address is required.' }, { status: 400 });
+    }
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(id, {
+      email:          newEmail,
+      email_confirm:  true,   // bypass confirmation — super admin action
+    });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+
   // ── Role change (super_admin only) ─────────────────────────────────────────
   if ('role' in body) {
     if (admin.app_metadata?.role !== 'super_admin') {
