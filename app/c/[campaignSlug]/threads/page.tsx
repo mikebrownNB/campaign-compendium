@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import { useCampaignCrud } from '@/lib/useCampaignCrud';
 import type { Thread, ThreadStatus, ThreadPriority } from '@/lib/types';
+import { useCampaign } from '@/lib/CampaignContext';
 import { PageHeader, Button, Tag, Input, Textarea, Select, ConfirmDelete, EmptyState } from '@/components/UI';
 import { Modal } from '@/components/Modal';
 import { SlideOut } from '@/components/SlideOut';
+import { DmOnlyToggle, DmOnlyBadge } from '@/components/DmOnlyToggle';
 
 const STATUS_OPTS = [
   { value: 'urgent',   label: 'Urgent' },
@@ -40,9 +42,11 @@ const emptyThread = {
   priority:    'active' as ThreadPriority,
   tags:        [] as string[],
   description: '',
+  dm_only:     false,
 };
 
 export default function ThreadsPage() {
+  const { isDM } = useCampaign();
   const { items, loading, create, update, remove } = useCampaignCrud<Thread>('threads');
 
   // Slideout state
@@ -71,6 +75,7 @@ export default function ThreadsPage() {
       priority:    t.priority,
       tags:        t.tags || [],
       description: t.description,
+      dm_only:     !!t.dm_only,
     });
     setEditId(t.id);
     setTagInput('');
@@ -115,7 +120,10 @@ export default function ThreadsPage() {
               onClick={() => openEdit(t)}
             >
               <div className="flex items-start justify-between flex-wrap gap-2 mb-2">
-                <h3 className="font-display text-base font-bold text-text-primary">{t.title}</h3>
+                <h3 className="font-display text-base font-bold text-text-primary flex items-center gap-1.5">
+                  {t.title}
+                  {t.dm_only && <DmOnlyBadge />}
+                </h3>
                 <span className="inline-flex items-center gap-1.5 font-mono text-[0.65rem] uppercase tracking-wider text-text-muted">
                   <span className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT[t.status] || ''}`} />
                   {t.status}
@@ -211,6 +219,9 @@ export default function ThreadsPage() {
               <Button size="sm" variant="secondary" onClick={addTag}>Add</Button>
             </div>
           </div>
+          {isDM && (
+            <DmOnlyToggle value={form.dm_only} onChange={(v) => setForm({ ...form, dm_only: v })} />
+          )}
         </div>
       </SlideOut>
 

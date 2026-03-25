@@ -7,7 +7,9 @@ import { Tag, Button, Input, Textarea } from '@/components/UI';
 import { NpcDetailSlideOut } from '@/components/NpcDetailSlideOut';
 import { FactionDetailSlideOut } from '@/components/FactionDetailSlideOut';
 import { useCampaignCrud } from '@/lib/useCampaignCrud';
+import { useCampaign } from '@/lib/CampaignContext';
 import { Icon } from '@/components/Icon';
+import { DmOnlyToggle } from '@/components/DmOnlyToggle';
 
 const STATUS_DOT: Record<string, string> = {
   urgent:   'bg-accent-red animate-pulse-glow',
@@ -53,6 +55,7 @@ export function LocationDetailSlideOut({
   onEditPin,
   onDeletePin,
 }: Props) {
+  const { isDM } = useCampaign();
   const { update } = useCampaignCrud<GameLocation>('locations');
 
   // Cross-reference data (self-fetched; small datasets so this is fine)
@@ -62,7 +65,7 @@ export function LocationDetailSlideOut({
 
   const [editing, setEditing] = useState(false);
   const [saving,  setSaving]  = useState(false);
-  const [form,    setForm]    = useState({ name: '', category: '', description: '' });
+  const [form,    setForm]    = useState({ name: '', category: '', description: '', dm_only: false });
 
   // Layer-2 sub-slideouts
   const [viewingNpc,     setViewingNpc]     = useState<NPC | null>(null);
@@ -75,6 +78,7 @@ export function LocationDetailSlideOut({
         name:        location.name,
         category:    location.category,
         description: location.description,
+        dm_only:     !!location.dm_only,
       });
       setEditing(false);
     }
@@ -116,6 +120,7 @@ export function LocationDetailSlideOut({
       category:    form.category,
       description: form.description,
       tags:        location.tags ?? [],
+      dm_only:     form.dm_only,
     });
     setSaving(false);
     setEditing(false);
@@ -186,6 +191,9 @@ export function LocationDetailSlideOut({
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
                 rows={7}
               />
+              {isDM && (
+                <DmOnlyToggle value={form.dm_only} onChange={(v) => setForm({ ...form, dm_only: v })} />
+              )}
             </div>
           ) : (
             /* ── View mode ── */

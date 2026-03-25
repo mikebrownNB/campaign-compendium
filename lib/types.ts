@@ -85,6 +85,7 @@ export interface NPC {
   description: string;
   tags: string[];
   status: NpcStatus;
+  dm_only?: boolean;
   created_at?: string;
   updated_at?: string;
 }
@@ -97,6 +98,7 @@ export interface GameLocation {
   category: string;
   tags: string[];
   description: string;
+  dm_only?: boolean;
   created_at?: string;
   updated_at?: string;
 }
@@ -110,6 +112,7 @@ export interface Faction {
   description: string;
   tags: string[];
   logo_url?: string;
+  dm_only?: boolean;
   created_at?: string;
   updated_at?: string;
 }
@@ -130,6 +133,7 @@ export interface LootItem {
   price?: string;
   sold_by_faction?: string;
   dnd_beyond_url?: string;
+  dm_only?: boolean;
   created_at?: string;
   updated_at?: string;
 }
@@ -157,6 +161,7 @@ export interface Thread {
   priority: ThreadPriority;
   tags: string[];
   description: string;
+  dm_only?: boolean;
   created_at?: string;
   updated_at?: string;
 }

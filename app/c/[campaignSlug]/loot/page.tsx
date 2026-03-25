@@ -4,10 +4,12 @@ import { useState, useMemo } from 'react';
 import { useCampaignCrud } from '@/lib/useCampaignCrud';
 import type { LootItem, LootStatus, Faction } from '@/lib/types';
 import { LOOT_STATUSES } from '@/lib/types';
+import { useCampaign } from '@/lib/CampaignContext';
 import { PageHeader, Button, Input, Textarea, EmptyState, ConfirmDelete } from '@/components/UI';
 import { Modal } from '@/components/Modal';
 import { SlideOut } from '@/components/SlideOut';
 import { Icon } from '@/components/Icon';
+import { DmOnlyToggle, DmOnlyBadge } from '@/components/DmOnlyToggle';
 
 const statusStyle: Record<LootStatus, string> = {
   Carried: 'text-green-400 bg-green-400/10 border-green-400/30',
@@ -16,12 +18,13 @@ const statusStyle: Record<LootStatus, string> = {
   Lost:    'text-accent-red bg-accent-red/10 border-accent-red/30',
 };
 
-const empty = { name: '', details: '', source: '', holder: '', status: 'Carried' as LootStatus, price: '', sold_by_faction: '', dnd_beyond_url: '' };
+const empty = { name: '', details: '', source: '', holder: '', status: 'Carried' as LootStatus, price: '', sold_by_faction: '', dnd_beyond_url: '', dm_only: false };
 
 type SortKey = 'name' | 'source' | 'holder' | 'price';
 type SortDir = 'asc' | 'desc';
 
 export default function LootPage() {
+  const { isDM } = useCampaign();
   const { items, loading, create, update, remove } = useCampaignCrud<LootItem>('loot-items');
   const { items: factions } = useCampaignCrud<Faction>('factions');
 
@@ -85,7 +88,7 @@ export default function LootPage() {
 
   const openCreate = () => { setForm(empty); setEditId(null); setSlideOpen(true); };
   const openEdit   = (l: LootItem) => {
-    setForm({ name: l.name, details: l.details, source: l.source, holder: l.holder || '', status: (l.status || 'Carried') as LootStatus, price: l.price || '', sold_by_faction: l.sold_by_faction || '', dnd_beyond_url: l.dnd_beyond_url || '' });
+    setForm({ name: l.name, details: l.details, source: l.source, holder: l.holder || '', status: (l.status || 'Carried') as LootStatus, price: l.price || '', sold_by_faction: l.sold_by_faction || '', dnd_beyond_url: l.dnd_beyond_url || '', dm_only: !!l.dm_only });
     setEditId(l.id);
     setSlideOpen(true);
   };
@@ -183,7 +186,10 @@ export default function LootPage() {
                 className="bg-card border border-border-subtle rounded-lg p-4 cursor-pointer hover:bg-card-hover transition-colors active:bg-card-hover/80"
               >
                 <div className="flex items-center justify-between gap-2 mb-1">
-                  <span className="font-display text-sm font-bold text-accent-gold truncate">{l.name}</span>
+                  <span className="font-display text-sm font-bold text-accent-gold truncate flex items-center gap-1.5">
+                    {l.name}
+                    {l.dm_only && <DmOnlyBadge />}
+                  </span>
                   <span className={`font-mono text-xs border rounded px-2 py-0.5 shrink-0 ${statusStyle[s]}`}>{s}</span>
                 </div>
                 <div className="flex flex-wrap gap-2 text-xs font-mono">
@@ -230,8 +236,9 @@ export default function LootPage() {
                   className={`border-b border-border-subtle/50 cursor-pointer transition-colors hover:bg-card-hover/60 group ${i % 2 === 0 ? 'bg-card/50' : 'bg-deep/30'}`}
                 >
                   <td className="p-3">
-                    <span className="font-display text-sm font-bold text-accent-gold group-hover:text-accent-gold/80 transition-colors">
+                    <span className="font-display text-sm font-bold text-accent-gold group-hover:text-accent-gold/80 transition-colors inline-flex items-center gap-1.5">
                       {l.name}
+                      {l.dm_only && <DmOnlyBadge />}
                     </span>
                   </td>
                   <td className="p-3 text-text-secondary text-sm">{l.holder || '—'}</td>
@@ -329,6 +336,9 @@ export default function LootPage() {
           </div>
           <Input label="D&D Beyond URL" value={form.dnd_beyond_url} onChange={(e) => setForm({ ...form, dnd_beyond_url: e.target.value })} placeholder="https://www.dndbeyond.com/magic-items/…" />
           <Textarea label="Details" value={form.details} onChange={(e) => setForm({ ...form, details: e.target.value })} rows={6} />
+          {isDM && (
+            <DmOnlyToggle value={form.dm_only} onChange={(v) => setForm({ ...form, dm_only: v })} />
+          )}
         </div>
       </SlideOut>
 

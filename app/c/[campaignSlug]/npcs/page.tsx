@@ -3,10 +3,12 @@
 import { useState, useMemo } from 'react';
 import { useCampaignCrud } from '@/lib/useCampaignCrud';
 import type { NPC, NpcStatus, Faction } from '@/lib/types';
+import { useCampaign } from '@/lib/CampaignContext';
 import { PageHeader, Button, Tag, Input, Textarea, EmptyState, ConfirmDelete } from '@/components/UI';
 import { Modal } from '@/components/Modal';
 import { SlideOut } from '@/components/SlideOut';
 import { Icon } from '@/components/Icon';
+import { DmOnlyToggle, DmOnlyBadge } from '@/components/DmOnlyToggle';
 
 const STATUS_OPTIONS: NpcStatus[] = ['Alive', 'Deceased', 'Unknown'];
 
@@ -16,12 +18,13 @@ const statusStyle: Record<NpcStatus, string> = {
   Unknown:  'text-text-muted bg-card border-border-subtle',
 };
 
-const empty = { name: '', role: '', faction: '', location: '', description: '', tags: [] as string[], status: 'Unknown' as NpcStatus };
+const empty = { name: '', role: '', faction: '', location: '', description: '', tags: [] as string[], status: 'Unknown' as NpcStatus, dm_only: false };
 
 type SortKey = 'name' | 'role' | 'faction' | 'location';
 type SortDir = 'asc' | 'desc';
 
 export default function NPCsPage() {
+  const { isDM } = useCampaign();
   const { items, loading, create, update, remove } = useCampaignCrud<NPC>('npcs');
   const { items: factions } = useCampaignCrud<Faction>('factions');
 
@@ -79,7 +82,7 @@ export default function NPCsPage() {
 
   const openCreate = () => { setForm(empty); setEditId(null); setSlideOpen(true); };
   const openEdit   = (n: NPC) => {
-    setForm({ name: n.name, role: n.role, faction: n.faction || '', location: n.location || '', description: n.description, tags: n.tags || [], status: (n.status || 'Unknown') as NpcStatus });
+    setForm({ name: n.name, role: n.role, faction: n.faction || '', location: n.location || '', description: n.description, tags: n.tags || [], status: (n.status || 'Unknown') as NpcStatus, dm_only: !!n.dm_only });
     setEditId(n.id);
     setSlideOpen(true);
   };
@@ -163,7 +166,10 @@ export default function NPCsPage() {
                 className="bg-card border border-border-subtle rounded-lg p-4 cursor-pointer hover:bg-card-hover transition-colors active:bg-card-hover/80"
               >
                 <div className="flex items-center justify-between gap-2 mb-1">
-                  <span className="font-display text-sm font-bold text-accent-gold truncate">{n.name}</span>
+                  <span className="font-display text-sm font-bold text-accent-gold truncate flex items-center gap-1.5">
+                    {n.name}
+                    {n.dm_only && <DmOnlyBadge />}
+                  </span>
                   <span className={`font-mono text-xs border rounded px-2 py-0.5 shrink-0 ${statusStyle[s]}`}>{s}</span>
                 </div>
                 <div className="flex flex-wrap gap-1.5 mb-1">
@@ -205,8 +211,9 @@ export default function NPCsPage() {
                   className={`border-b border-border-subtle/50 cursor-pointer transition-colors hover:bg-card-hover/60 group ${i % 2 === 0 ? 'bg-card/50' : 'bg-deep/30'}`}
                 >
                   <td className="p-3">
-                    <span className="font-display text-sm font-bold text-accent-gold group-hover:text-accent-gold/80 transition-colors">
+                    <span className="font-display text-sm font-bold text-accent-gold group-hover:text-accent-gold/80 transition-colors inline-flex items-center gap-1.5">
                       {n.name}
+                      {n.dm_only && <DmOnlyBadge />}
                     </span>
                   </td>
                   <td className="p-3"><Tag variant="npc">{n.role}</Tag></td>
@@ -292,6 +299,9 @@ export default function NPCsPage() {
             <Input label="Location" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="Optional" />
           </div>
           <Textarea label="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={6} />
+          {isDM && (
+            <DmOnlyToggle value={form.dm_only} onChange={(v) => setForm({ ...form, dm_only: v })} />
+          )}
         </div>
       </SlideOut>
 

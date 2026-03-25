@@ -3,17 +3,42 @@ import { NextRequest, NextResponse } from 'next/server';
 
 type TableName = 'calendar_events' | 'npcs' | 'locations' | 'factions' | 'loot_items' | 'sessions' | 'threads' | 'map_markers' | 'personal_notes' | 'settings' | 'campaigns' | 'campaign_members' | 'campaign_maps' | 'players' | 'resources';
 
+// Tables that support the dm_only visibility flag
+const DM_ONLY_TABLES: TableName[] = ['npcs', 'locations', 'factions', 'loot_items', 'threads'];
+
 // ── Campaign-scoped CRUD handlers ──────────────────────────────────────────────
 export function createCampaignCrudHandlers(table: TableName, orderBy: string, campaignId: string) {
   return {
     async GET() {
       try {
         const supabase = await getSupabaseServer();
-        const { data, error } = await supabase
+
+        // Check if the requesting user is a DM for this campaign
+        let isDM = true; // default to showing everything; restrict if we can determine role
+        if (DM_ONLY_TABLES.includes(table)) {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { data: membership } = await supabase
+              .from('campaign_members')
+              .select('role')
+              .eq('campaign_id', campaignId)
+              .eq('user_id', user.id)
+              .single();
+            isDM = membership?.role === 'dm';
+          }
+        }
+
+        let query = supabase
           .from(table)
           .select('*')
-          .eq('campaign_id', campaignId)
-          .order(orderBy);
+          .eq('campaign_id', campaignId);
+
+        // Non-DMs cannot see dm_only items
+        if (DM_ONLY_TABLES.includes(table) && !isDM) {
+          query = query.or('dm_only.is.null,dm_only.eq.false');
+        }
+
+        const { data, error } = await query.order(orderBy);
         if (error) return NextResponse.json({ error: error.message }, { status: 500 });
         return NextResponse.json(data);
       } catch (e) {

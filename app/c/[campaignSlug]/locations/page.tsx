@@ -3,13 +3,16 @@
 import { useState } from 'react';
 import { useCampaignCrud } from '@/lib/useCampaignCrud';
 import type { GameLocation } from '@/lib/types';
+import { useCampaign } from '@/lib/CampaignContext';
 import { PageHeader, Button, Card, Tag, Input, Textarea, EmptyState, ConfirmDelete } from '@/components/UI';
 import { Modal } from '@/components/Modal';
 import { LocationDetailSlideOut } from '@/components/LocationDetailSlideOut';
+import { DmOnlyToggle, DmOnlyBadge } from '@/components/DmOnlyToggle';
 
-const empty = { name: '', category: '', description: '', tags: [] as string[] };
+const empty = { name: '', category: '', description: '', tags: [] as string[], dm_only: false };
 
 export default function LocationsPage() {
+  const { isDM } = useCampaign();
   const { items, loading, create, remove } = useCampaignCrud<GameLocation>('locations');
 
   const [selected,   setSelected]   = useState<GameLocation | null>(null);
@@ -42,8 +45,9 @@ export default function LocationsPage() {
               className="cursor-pointer hover:border-border-glow hover:-translate-y-0.5 transition-all duration-200 group"
               onClick={() => setSelected(l)}
             >
-              <h3 className="font-display text-base font-bold text-text-primary group-hover:text-accent-gold transition-colors mb-1">
+              <h3 className="font-display text-base font-bold text-text-primary group-hover:text-accent-gold transition-colors mb-1 flex items-center gap-1.5">
                 {l.name}
+                {l.dm_only && <DmOnlyBadge />}
               </h3>
               <div className="flex gap-1.5 flex-wrap mb-2">
                 <Tag variant="location">{l.category}</Tag>
@@ -82,6 +86,11 @@ export default function LocationsPage() {
           onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
           rows={4}
         />
+        {isDM && (
+          <div className="mt-3">
+            <DmOnlyToggle value={createForm.dm_only} onChange={(v) => setCreateForm({ ...createForm, dm_only: v })} />
+          </div>
+        )}
         <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border-subtle">
           <Button variant="ghost" onClick={() => setCreateOpen(false)}>Cancel</Button>
           <Button onClick={handleCreate} disabled={!createForm.name.trim()}>Create</Button>

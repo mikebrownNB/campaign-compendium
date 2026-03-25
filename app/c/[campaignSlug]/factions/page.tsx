@@ -10,9 +10,10 @@ import { Modal } from '@/components/Modal';
 import { SlideOut, SlideOutSection } from '@/components/SlideOut';
 import { NpcDetailSlideOut } from '@/components/NpcDetailSlideOut';
 import { Icon } from '@/components/Icon';
+import { DmOnlyToggle, DmOnlyBadge } from '@/components/DmOnlyToggle';
 import Link from 'next/link';
 
-const emptyFaction = { name: '', status: '', description: '', tags: [] as string[], logo_url: '' };
+const emptyFaction = { name: '', status: '', description: '', tags: [] as string[], logo_url: '', dm_only: false };
 
 const STATUS_COLORS: Record<string, string> = {
   'Hostile': 'border-l-accent-red',
@@ -33,7 +34,7 @@ const STATUS_TAG_VARIANT: Record<string, string> = {
 };
 
 export default function FactionsPage() {
-  const { campaign } = useCampaign();
+  const { campaign, isDM } = useCampaign();
   const { items: factions, loading, create, update, remove } = useCampaignCrud<Faction>('factions');
   const { items: npcs } = useCampaignCrud<NPC>('npcs');
   const { items: threads } = useCampaignCrud<Thread>('threads');
@@ -99,7 +100,7 @@ export default function FactionsPage() {
   };
 
   const openEdit = (f: Faction) => {
-    setForm({ name: f.name, status: f.status, description: f.description, tags: f.tags || [], logo_url: f.logo_url || '' });
+    setForm({ name: f.name, status: f.status, description: f.description, tags: f.tags || [], logo_url: f.logo_url || '', dm_only: !!f.dm_only });
     setEditId(f.id);
     setLogoFile(null);
     setLogoPreview(f.logo_url || '');
@@ -174,8 +175,9 @@ export default function FactionsPage() {
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between mb-1">
-                      <h3 className="font-display text-base font-bold text-text-primary group-hover:text-accent-gold transition-colors">
+                      <h3 className="font-display text-base font-bold text-text-primary group-hover:text-accent-gold transition-colors flex items-center gap-1.5">
                         {f.name}
+                        {f.dm_only && <DmOnlyBadge />}
                       </h3>
                       <Tag variant={STATUS_TAG_VARIANT[f.status] || 'faction'}>
                         {f.status}
@@ -395,6 +397,9 @@ export default function FactionsPage() {
               </label>
             </div>
           </div>
+          {isDM && (
+            <DmOnlyToggle value={form.dm_only} onChange={(v) => setForm({ ...form, dm_only: v })} />
+          )}
         </div>
       </SlideOut>
 
