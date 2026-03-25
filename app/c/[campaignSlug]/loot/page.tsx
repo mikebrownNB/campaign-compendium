@@ -34,24 +34,35 @@ export default function LootPage() {
       {loading ? <p className="text-text-muted font-mono text-sm">Loading...</p> : items.length === 0 ? (
         <EmptyState icon="paid" message="No loot yet." />
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
+        <div className="overflow-x-auto border border-border-subtle rounded-lg">
+          <table className="w-full border-collapse min-w-[600px]">
             <thead>
               <tr>
-                {['Item', 'Details', 'Source', 'Holder', ''].map((h) => (
-                  <th key={h} className="text-left p-3 font-display text-[0.65rem] tracking-wider uppercase text-accent-purple bg-accent-purple/5 border-b border-border-subtle first:rounded-tl-lg last:rounded-tr-lg">{h}</th>
+                {['Item', 'Details', 'Source', 'Holder'].map((h) => (
+                  <th key={h} className="text-left p-3 font-display text-[0.65rem] tracking-wider uppercase text-accent-purple bg-accent-purple/5 border-b border-border-subtle first:rounded-tl-lg">{h}</th>
                 ))}
+                <th className="w-10 bg-accent-purple/5 border-b border-border-subtle rounded-tr-lg" />
               </tr>
             </thead>
             <tbody>
-              {items.map((l) => (
-                <tr key={l.id} className="border-b border-border-subtle hover:bg-card-hover/50 transition-colors cursor-pointer" onClick={() => openEdit(l)}>
-                  <td className="p-3 text-accent-gold font-display text-sm font-bold">{l.name}</td>
-                  <td className="p-3 text-text-secondary text-sm max-w-xs">{l.details}</td>
-                  <td className="p-3 text-text-muted font-mono text-xs">{l.source}</td>
-                  <td className="p-3 text-text-secondary text-sm">{l.holder || '\u2014'}</td>
+              {items.map((l, i) => (
+                <tr key={l.id} onClick={() => openEdit(l)}
+                  className={`border-b border-border-subtle/50 cursor-pointer transition-colors hover:bg-card-hover/60 group ${i % 2 === 0 ? 'bg-card/50' : 'bg-deep/30'}`}
+                >
                   <td className="p-3">
-                    <button onClick={(e) => { e.stopPropagation(); setDeleteId(l.id); }} className="text-text-muted hover:text-accent-red text-xs font-mono"><Icon name="close" className="text-xs" /></button>
+                    <span className="font-display text-sm font-bold text-accent-gold group-hover:text-accent-gold/80 transition-colors">
+                      {l.name}
+                    </span>
+                  </td>
+                  <td className="p-3 max-w-xs">
+                    <p className="text-text-secondary text-xs line-clamp-2">{l.details}</p>
+                  </td>
+                  <td className="p-3 text-text-muted font-mono text-xs">{l.source}</td>
+                  <td className="p-3 text-text-secondary text-sm">{l.holder || '—'}</td>
+                  <td className="p-3 text-center">
+                    <button onClick={(e) => { e.stopPropagation(); setDeleteId(l.id); }}
+                      className="text-text-muted/30 hover:text-accent-red text-xs font-mono transition-colors opacity-0 group-hover:opacity-100"
+                    ><Icon name="close" className="text-xs" /></button>
                   </td>
                 </tr>
               ))}
