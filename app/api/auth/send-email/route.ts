@@ -40,9 +40,8 @@ interface HookPayload {
   };
 }
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(request: NextRequest) {
+  const resend = new Resend(process.env.RESEND_API_KEY);
   // -- Optional: verify the Supabase hook JWT secret --
   const hookSecret = process.env.SUPABASE_AUTH_HOOK_SECRET;
   if (hookSecret) {
