@@ -28,7 +28,7 @@ module.exports = {
       },
       fontFamily: {
         display: ['Cinzel', 'serif'],
-        body: ['Crimson Text', 'serif'],
+        body: ['Atkinson Hyperlegible', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
     },
