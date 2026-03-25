@@ -496,14 +496,14 @@ export default function MapPage() {
             label="Name"
             value={createForm.label}
             onChange={(e) => setCreateForm(f => ({ ...f, label: e.target.value }))}
-            placeholder="Location name \u2014 required"
+            placeholder="Location name — required"
           />
           <Textarea
             label="Notes"
             value={createForm.note}
             onChange={(e) => setCreateForm(f => ({ ...f, note: e.target.value }))}
             rows={4}
-            placeholder="Description or notes for this location\u2026"
+            placeholder="Description or notes for this location…"
           />
           <Select
             label="Link to existing location (optional)"

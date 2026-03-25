@@ -100,7 +100,7 @@ export default function NPCsPage() {
           <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-sm" />
           <input
             className="w-full bg-card border border-border-subtle rounded-lg pl-9 pr-4 py-2.5 text-text-primary font-body text-sm focus:outline-none focus:border-accent-purple transition-colors placeholder:text-text-muted/50"
-            placeholder="Search by name, role, faction, location, or description\u2026"
+            placeholder="Search by name, role, faction, location, or description…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -212,7 +212,7 @@ export default function NPCsPage() {
         <div className="flex flex-col gap-4">
           <Input label="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <div className="grid grid-cols-2 gap-3">
-            <Input label="Role" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} placeholder="Broker, Ally, Merchant\u2026" />
+            <Input label="Role" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} placeholder="Broker, Ally, Merchant…" />
             <Input label="Faction" value={form.faction} onChange={(e) => setForm({ ...form, faction: e.target.value })} placeholder="Optional" />
           </div>
           <Input label="Location" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="Optional" />

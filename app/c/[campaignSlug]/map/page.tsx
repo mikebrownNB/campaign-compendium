@@ -24,7 +24,7 @@ export default function MapRoot() {
 
   return (
     <div className="fixed inset-0 md:left-56 flex items-center justify-center bg-[#12100d]">
-      <p className="text-text-muted font-mono text-sm">Loading map\u2026</p>
+      <p className="text-text-muted font-mono text-sm">Loading map…</p>
     </div>
   );
 }

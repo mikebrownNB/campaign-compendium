@@ -63,7 +63,7 @@ export default function LootPage() {
         <Input label="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
         <Textarea label="Details" value={form.details} onChange={(e) => setForm({ ...form, details: e.target.value })} rows={3} />
         <div className="grid grid-cols-2 gap-3">
-          <Input label="Source" value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} placeholder="S7 \u2014 Zendali" />
+          <Input label="Source" value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} placeholder="S7 — Zendali" />
           <Input label="Holder" value={form.holder} onChange={(e) => setForm({ ...form, holder: e.target.value })} placeholder="Optional" />
         </div>
         <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border-subtle">

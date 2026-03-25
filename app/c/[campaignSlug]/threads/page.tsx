@@ -147,7 +147,7 @@ export default function ThreadsPage() {
               </Button>
             )}
             <Button size="sm" onClick={handleSave} disabled={saving}>
-              {saving ? 'Saving\u2026' : 'Save'}
+              {saving ? 'Saving…' : 'Save'}
             </Button>
           </div>
         }
@@ -157,7 +157,7 @@ export default function ThreadsPage() {
             label="Title"
             value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
-            placeholder="Thread title\u2026"
+            placeholder="Thread title…"
           />
           <div className="grid grid-cols-2 gap-3">
             <Select
@@ -177,7 +177,7 @@ export default function ThreadsPage() {
             label="Description"
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
-            placeholder="Describe the thread\u2026"
+            placeholder="Describe the thread…"
             rows={6}
           />
 
@@ -206,7 +206,7 @@ export default function ThreadsPage() {
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }}
-                placeholder="Add tag\u2026"
+                placeholder="Add tag…"
               />
               <Button size="sm" variant="secondary" onClick={addTag}>Add</Button>
             </div>

@@ -74,7 +74,7 @@ export default function LocationsPage() {
           label="Category"
           value={createForm.category}
           onChange={(e) => setCreateForm({ ...createForm, category: e.target.value })}
-          placeholder="City, Dungeon, Wilderness\u2026"
+          placeholder="City, Dungeon, Wilderness…"
         />
         <Textarea
           label="Description"
