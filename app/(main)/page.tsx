@@ -47,7 +47,7 @@ export default function CampaignSelectionPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 md:px-8 py-8 animate-fade-in">
+    <div className="animate-fade-in">
       <div className="text-center py-12 mb-8 border-b border-border-subtle">
         <h1 className="font-display text-4xl md:text-5xl font-black tracking-[0.12em] uppercase bg-gradient-to-r from-accent-gold via-white to-accent-gold bg-clip-text text-transparent mb-3">
           Campaign Compendium

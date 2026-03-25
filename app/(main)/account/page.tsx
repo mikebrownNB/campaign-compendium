@@ -46,9 +46,9 @@ export default function AccountPage() {
     });
   }, []);
 
-  const email   = user?.email ?? '';
+  const email    = user?.email ?? '';
   const userRole = (user?.app_metadata?.role as string) ?? 'member';
-  const isAdmin = userRole === 'admin' || userRole === 'super_admin';
+  const isAdmin  = userRole === 'super_admin';
 
   // ── Update display name ─────────────────────────────────────────────────
   const handleSaveName = async (e: React.FormEvent) => {
@@ -135,15 +135,9 @@ export default function AccountPage() {
           {isAdmin && (
             <div className="flex flex-col gap-1">
               <label className={labelClass}>Role</label>
-              {userRole === 'super_admin' ? (
-                <span className="font-mono text-[0.65rem] text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-2 py-0.5 w-fit">
-                  Super Admin
-                </span>
-              ) : (
-                <span className="font-mono text-[0.65rem] text-accent-gold bg-accent-gold/10 border border-accent-gold/30 rounded px-2 py-0.5 w-fit">
-                  Admin
-                </span>
-              )}
+              <span className="font-mono text-[0.65rem] text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-2 py-0.5 w-fit">
+                Super Admin
+              </span>
             </div>
           )}
 
