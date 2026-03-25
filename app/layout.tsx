@@ -17,7 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
         />
       </head>
-      <body className="font-body text-text-primary antialiased">
+      <body className="font-body text-base text-text-primary antialiased">
         <div className="relative z-[1] min-h-screen">
           {children}
         </div>
