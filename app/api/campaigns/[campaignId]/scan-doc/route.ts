@@ -107,7 +107,7 @@ export async function POST(
     const factionNames  = new Set((existingFactions.data ?? []).map(f => f.name.toLowerCase()));
 
     // Add player names to NPC dedup set so they're never created as NPCs
-    for (const name of playerNames) npcNames.add(name);
+    playerNames.forEach(name => npcNames.add(name));
 
     // Build the user message with existing names for Claude context
     const knownSection = [
