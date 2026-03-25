@@ -266,91 +266,59 @@ function GeneralTab({ campaign, isOwner }: { campaign: any; isOwner: boolean }) 
 }
 
 // ── Members Tab ────────────────────────────────────────────────────────────────
-const emptyNewUser = { display_name: '', email: '', password: '' };
-
 function MembersTab({ campaignId }: { campaignId: string }) {
-  const [members,        setMembers]        = useState<any[]>([]);
-  const [availableUsers, setAvailableUsers] = useState<{ id: string; display_name: string; email: string }[]>([]);
-  const [loading,        setLoading]        = useState(true);
-  const [showAdd,        setShowAdd]        = useState(false);
-  const [addMode,        setAddMode]        = useState<'existing' | 'new'>('existing');
-
-  // Existing-user mode
-  const [addUserId, setAddUserId] = useState('');
-  const [addRole,   setAddRole]   = useState<'dm' | 'player'>('player');
-
-  // New-user mode
-  const [newUser,    setNewUser]    = useState(emptyNewUser);
-  const [newRole,    setNewRole]    = useState<'dm' | 'player'>('player');
-  const [createErr,  setCreateErr]  = useState<string | null>(null);
-
-  const [saving, setSaving] = useState(false);
+  const [members,       setMembers]       = useState<any[]>([]);
+  const [loading,       setLoading]       = useState(true);
+  const [showInvite,    setShowInvite]    = useState(false);
+  const [inviteEmail,   setInviteEmail]   = useState('');
+  const [inviteRole,    setInviteRole]    = useState<'dm' | 'player'>('player');
+  const [inviting,      setInviting]      = useState(false);
+  const [inviteResult,  setInviteResult]  = useState<{ action: 'added' | 'invited'; email: string } | null>(null);
+  const [inviteErr,     setInviteErr]     = useState<string | null>(null);
 
   // Per-row role-edit state
   const [editingRoleId,  setEditingRoleId]  = useState<string | null>(null);
   const [editingRoleVal, setEditingRoleVal] = useState<'dm' | 'player'>('player');
 
+  const selectClass = 'bg-deep border border-border-subtle rounded-lg px-3 py-2 text-text-primary font-body text-sm';
+
   const loadMembers = useCallback(async () => {
-    const [membersRes, usersRes] = await Promise.all([
-      fetch(`/api/campaigns/${campaignId}/members`),
-      fetch(`/api/campaigns/${campaignId}/available-users`),
-    ]);
-    const membersData = await membersRes.json();
-    const usersData   = await usersRes.json();
-    setMembers(Array.isArray(membersData) ? membersData : []);
-    setAvailableUsers(Array.isArray(usersData) ? usersData : []);
+    const res = await fetch(`/api/campaigns/${campaignId}/members`);
+    const data = await res.json();
+    setMembers(Array.isArray(data) ? data : []);
     setLoading(false);
   }, [campaignId]);
 
   useEffect(() => { loadMembers(); }, [loadMembers]);
 
-  const closeAdd = () => {
-    setShowAdd(false);
-    setAddUserId('');
-    setNewUser(emptyNewUser);
-    setCreateErr(null);
+  const closeInvite = () => {
+    setShowInvite(false);
+    setInviteEmail('');
+    setInviteErr(null);
+    setInviteResult(null);
   };
 
-  // Add an existing user to the campaign
-  const handleAddExisting = async () => {
-    if (!addUserId) return;
-    setSaving(true);
+  const handleInvite = async () => {
+    setInviteErr(null);
+    setInviteResult(null);
+    if (!inviteEmail.trim()) { setInviteErr('Email address is required.'); return; }
+    setInviting(true);
     try {
-      await fetch(`/api/campaigns/${campaignId}/members`, {
+      const res = await fetch(`/api/campaigns/${campaignId}/members/invite`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ user_id: addUserId, role: addRole }),
+        body:    JSON.stringify({ email: inviteEmail.trim(), role: inviteRole }),
       });
-      closeAdd();
-      loadMembers();
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Create a new user and add them to the campaign in one step
-  const handleCreateAndAdd = async () => {
-    setCreateErr(null);
-    if (!newUser.display_name.trim() || !newUser.email.trim() || !newUser.password) {
-      setCreateErr('Display name, email, and password are required.');
-      return;
-    }
-    setSaving(true);
-    try {
-      const res = await fetch(`/api/campaigns/${campaignId}/members/create-user`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ ...newUser, role: newRole }),
-      });
+      const body = await res.json();
       if (!res.ok) {
-        const body = await res.json();
-        setCreateErr(body.error ?? 'Failed to create user.');
+        setInviteErr(body.error ?? 'Failed to send invite.');
         return;
       }
-      closeAdd();
+      setInviteResult({ action: body.action, email: inviteEmail.trim() });
+      setInviteEmail('');
       loadMembers();
     } finally {
-      setSaving(false);
+      setInviting(false);
     }
   };
 
@@ -369,120 +337,68 @@ function MembersTab({ campaignId }: { campaignId: string }) {
     loadMembers();
   };
 
-  const selectClass = "bg-deep border border-border-subtle rounded-lg px-3 py-2 text-text-primary font-body text-sm";
-  const tabBtn = (active: boolean) =>
-    `px-3 py-1.5 font-mono text-[0.65rem] uppercase tracking-widest rounded-md transition-colors ${
-      active ? 'bg-accent-gold/15 text-accent-gold border border-accent-gold/30' : 'text-text-muted hover:text-text-primary'
-    }`;
-
   return (
     <div className="bg-card border border-border-subtle rounded-lg p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-display text-sm text-accent-gold tracking-wider">
           Members {!loading && <span className="text-text-muted font-mono text-[0.6rem]">({members.length})</span>}
         </h3>
-        <Button size="sm" onClick={() => { setShowAdd(!showAdd); if (showAdd) closeAdd(); }}>
-          {showAdd ? 'Cancel' : '+ Add Member'}
+        <Button size="sm" onClick={() => { if (showInvite) closeInvite(); else setShowInvite(true); }}>
+          {showInvite ? 'Cancel' : '+ Invite Member'}
         </Button>
       </div>
 
-      {showAdd && (
-        <div className="bg-deep/50 rounded-lg p-4 mb-4 border border-border-subtle/50">
-          {/* Mode tabs */}
-          <div className="flex gap-2 mb-4">
-            <button className={tabBtn(addMode === 'existing')} onClick={() => { setAddMode('existing'); setCreateErr(null); }}>
-              Existing User
-            </button>
-            <button className={tabBtn(addMode === 'new')} onClick={() => { setAddMode('new'); setCreateErr(null); }}>
-              Create New User
-            </button>
+      {/* ── Invite form ── */}
+      {showInvite && (
+        <div className="bg-deep/50 rounded-lg p-4 mb-4 border border-border-subtle/50 flex flex-col gap-3">
+          <div>
+            <p className="font-mono text-[0.65rem] text-text-muted leading-relaxed">
+              Enter an email address. If they already have an account they&apos;ll be added directly.
+              Otherwise they&apos;ll receive an invitation to sign up and join.
+            </p>
+          </div>
+          <div className="flex gap-3 items-end flex-wrap">
+            <div className="flex-1 min-w-[200px] flex flex-col gap-1">
+              <label className="font-mono text-[0.65rem] text-text-muted uppercase tracking-widest">Email</label>
+              <input
+                type="email"
+                value={inviteEmail}
+                onChange={e => setInviteEmail(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleInvite(); } }}
+                placeholder="player@example.com"
+                className={selectClass + ' w-full'}
+                autoFocus
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="font-mono text-[0.65rem] text-text-muted uppercase tracking-widest">Role</label>
+              <select value={inviteRole} onChange={e => setInviteRole(e.target.value as 'dm' | 'player')} className={selectClass}>
+                <option value="player">Player</option>
+                <option value="dm">DM</option>
+              </select>
+            </div>
+            <Button size="sm" onClick={handleInvite} disabled={inviting || !inviteEmail.trim()}>
+              {inviting ? 'Sending…' : 'Send Invite'}
+            </Button>
           </div>
 
-          {addMode === 'existing' ? (
-            <div className="flex gap-3 items-end flex-wrap">
-              <div className="flex-1 min-w-[180px] flex flex-col gap-1">
-                <label className="font-mono text-[0.65rem] text-text-muted uppercase tracking-widest">User</label>
-                <select value={addUserId} onChange={e => setAddUserId(e.target.value)} className={selectClass}>
-                  <option value="">— select a user —</option>
-                  {availableUsers.map(u => (
-                    <option key={u.id} value={u.id}>
-                      {u.display_name ? `${u.display_name} (${u.email})` : u.email}
-                    </option>
-                  ))}
-                </select>
-                {availableUsers.length === 0 && (
-                  <p className="font-mono text-[0.6rem] text-text-muted mt-1">
-                    No available users — create a new one instead.
-                  </p>
-                )}
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="font-mono text-[0.65rem] text-text-muted uppercase tracking-widest">Role</label>
-                <select value={addRole} onChange={e => setAddRole(e.target.value as 'dm' | 'player')} className={selectClass}>
-                  <option value="player">Player</option>
-                  <option value="dm">DM</option>
-                </select>
-              </div>
-              <Button size="sm" onClick={handleAddExisting} disabled={saving || !addUserId}>
-                {saving ? '…' : 'Add'}
-              </Button>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1">
-                  <label className="font-mono text-[0.65rem] text-text-muted uppercase tracking-widest">Display Name</label>
-                  <input
-                    type="text"
-                    value={newUser.display_name}
-                    onChange={e => setNewUser({ ...newUser, display_name: e.target.value })}
-                    placeholder="e.g. Brennan"
-                    className={selectClass + ' w-full'}
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="font-mono text-[0.65rem] text-text-muted uppercase tracking-widest">Email</label>
-                  <input
-                    type="email"
-                    value={newUser.email}
-                    onChange={e => setNewUser({ ...newUser, email: e.target.value })}
-                    placeholder="player@example.com"
-                    className={selectClass + ' w-full'}
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="font-mono text-[0.65rem] text-text-muted uppercase tracking-widest">Temporary Password</label>
-                  <input
-                    type="password"
-                    value={newUser.password}
-                    onChange={e => setNewUser({ ...newUser, password: e.target.value })}
-                    placeholder="Share this with the player"
-                    className={selectClass + ' w-full'}
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="font-mono text-[0.65rem] text-text-muted uppercase tracking-widest">Campaign Role</label>
-                  <select value={newRole} onChange={e => setNewRole(e.target.value as 'dm' | 'player')} className={selectClass}>
-                    <option value="player">Player</option>
-                    <option value="dm">DM</option>
-                  </select>
-                </div>
-              </div>
-              {createErr && (
-                <p className="font-mono text-[0.6rem] text-accent-red bg-accent-red/10 border border-accent-red/20 rounded px-3 py-2">
-                  {createErr}
-                </p>
-              )}
-              <div className="flex justify-end">
-                <Button size="sm" onClick={handleCreateAndAdd} disabled={saving}>
-                  {saving ? 'Creating…' : 'Create & Add'}
-                </Button>
-              </div>
-            </div>
+          {inviteErr && (
+            <p className="font-mono text-[0.6rem] text-accent-red bg-accent-red/10 border border-accent-red/20 rounded px-3 py-2">
+              <Icon name="close" className="text-xs align-middle" /> {inviteErr}
+            </p>
+          )}
+          {inviteResult && (
+            <p className="font-mono text-[0.6rem] text-accent-green bg-accent-green/10 border border-accent-green/20 rounded px-3 py-2">
+              <Icon name="check_circle" className="text-xs align-middle" />{' '}
+              {inviteResult.action === 'invited'
+                ? `Invitation sent to ${inviteResult.email}. They'll join when they accept.`
+                : `${inviteResult.email} already has an account and has been added to the campaign.`}
+            </p>
           )}
         </div>
       )}
 
+      {/* ── Member list ── */}
       {loading ? (
         <p className="text-text-muted text-sm">Loading...</p>
       ) : members.length === 0 ? (
@@ -492,7 +408,7 @@ function MembersTab({ campaignId }: { campaignId: string }) {
           {members.map(m => (
             <div key={m.id} className="flex items-center justify-between bg-deep/30 rounded-lg px-4 py-2 gap-3">
               <div className="min-w-0 flex-1">
-                <span className="font-mono text-sm text-text-primary">{m.display_name || m.user_id}</span>
+                <span className="font-mono text-sm text-text-primary">{m.display_name || <span className="text-text-muted italic">Pending</span>}</span>
                 {m.email && (
                   <span className="ml-2 font-mono text-[0.6rem] text-text-muted">{m.email}</span>
                 )}
@@ -509,16 +425,12 @@ function MembersTab({ campaignId }: { campaignId: string }) {
                       <option value="player">Player</option>
                       <option value="dm">DM</option>
                     </select>
-                    <button
-                      onClick={() => handleRoleChange(m.id)}
-                      className="font-mono text-[0.6rem] text-accent-gold hover:text-accent-gold/70 transition-colors"
-                    >
+                    <button onClick={() => handleRoleChange(m.id)}
+                      className="font-mono text-[0.6rem] text-accent-gold hover:text-accent-gold/70 transition-colors">
                       Save
                     </button>
-                    <button
-                      onClick={() => setEditingRoleId(null)}
-                      className="font-mono text-[0.6rem] text-text-muted hover:text-text-primary transition-colors"
-                    >
+                    <button onClick={() => setEditingRoleId(null)}
+                      className="font-mono text-[0.6rem] text-text-muted hover:text-text-primary transition-colors">
                       Cancel
                     </button>
                   </>
@@ -531,10 +443,8 @@ function MembersTab({ campaignId }: { campaignId: string }) {
                     >
                       {m.role}
                     </button>
-                    <button
-                      onClick={() => handleRemove(m.id)}
-                      className="font-mono text-[0.6rem] text-text-muted hover:text-accent-red transition-colors"
-                    >
+                    <button onClick={() => handleRemove(m.id)}
+                      className="font-mono text-[0.6rem] text-text-muted hover:text-accent-red transition-colors">
                       Remove
                     </button>
                   </>
