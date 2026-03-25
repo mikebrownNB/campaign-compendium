@@ -69,13 +69,18 @@ export async function POST(request: NextRequest) {
   const fromAddress = process.env.EMAIL_FROM ?? 'Campaign Compendium <noreply@campaigncompendium.app>';
 
   // Build a verify URL that routes through the app's own domain.
-  // /auth/confirm calls supabase.auth.verifyOtp() then redirects onward,
-  // so the link in the email shows the app's domain rather than supabase.co.
-  const verifyUrl = (type: string, finalRedirect?: string) => {
-    const params = new URLSearchParams({ token_hash, type });
-    const dest   = finalRedirect ?? redirect_to;
-    if (dest) params.set('redirect_to', dest);
-    return `${siteUrl}/auth/confirm?${params.toString()}`;
+  // Manually concatenate rather than using URLSearchParams so that the
+  // redirect path is never percent-encoded — some email clients double-encode
+  // %xx sequences, which breaks the link.
+  const verifyUrl = (type: string, redirectPath?: string) => {
+    // Normalise to a plain path so we never embed an encoded absolute URL
+    const dest = (() => {
+      const raw = redirectPath ?? redirect_to;
+      if (!raw) return '/';
+      try { return new URL(raw).pathname; } catch { /* relative path */ }
+      return raw.startsWith('/') ? raw : '/';
+    })();
+    return `${siteUrl}/auth/confirm?token_hash=${token_hash}&type=${type}&redirect_to=${dest}`;
   };
 
   try {
