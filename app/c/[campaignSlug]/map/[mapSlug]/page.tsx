@@ -18,6 +18,14 @@ function clamp(val: number, min: number, max: number) {
   return Math.min(max, Math.max(min, val));
 }
 
+function touchDist(a: React.Touch, b: React.Touch) {
+  return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+}
+
+function touchMid(a: React.Touch, b: React.Touch) {
+  return { x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 };
+}
+
 // --- Custom markers hook (per-map filtering) ---
 
 function useMapMarkers(mapId: string, campaignId: string) {
@@ -95,7 +103,7 @@ export default function MapPage() {
   const [pan,        setPan]        = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
 
-  // Stable refs so wheel/mouse handlers never read stale values
+  // Stable refs so wheel/mouse/touch handlers never read stale values
   const scaleRef = useRef(scale);
   const panRef   = useRef(pan);
   useEffect(() => { scaleRef.current = scale; }, [scale]);
@@ -108,13 +116,25 @@ export default function MapPage() {
     setScale(1);
   }, [mapSlug]);
 
-  // -- Drag --
+  // -- Drag (mouse) --
   const dragging  = useRef(false);
   const dragStart = useRef({ mouseX: 0, mouseY: 0, panX: 0, panY: 0 });
   const didDrag   = useRef(false);
 
+  // -- Touch state refs --
+  const touchCount   = useRef(0);
+  const touchStart1  = useRef({ x: 0, y: 0 });
+  const touchPanStart = useRef({ x: 0, y: 0 });
+  const pinchStartDist = useRef(0);
+  const pinchStartScale = useRef(1);
+  const pinchStartMid   = useRef({ x: 0, y: 0 });
+  const didTouchDrag = useRef(false);
+
   // -- Placing mode --
   const [placing, setPlacing] = useState(false);
+
+  // -- Legend toggle (mobile) --
+  const [showLegend, setShowLegend] = useState(false);
 
   // -- Create-marker modal --
   const [createOpen, setCreateOpen] = useState(false);
@@ -175,6 +195,15 @@ export default function MapPage() {
     return () => window.removeEventListener('keydown', onKey);
   }, [placing]);
 
+  // -- Prevent default touch gestures on the map container (no page scroll/zoom) --
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const prevent = (e: TouchEvent) => { e.preventDefault(); };
+    container.addEventListener('touchmove', prevent, { passive: false });
+    return () => container.removeEventListener('touchmove', prevent);
+  }, []);
+
   // -- Zoom toward container center --
   const zoomCenter = (factor: number) => {
     if (!containerRef.current) return;
@@ -205,6 +234,78 @@ export default function MapPage() {
 
   const stopDrag = () => { dragging.current = false; setIsDragging(false); };
 
+  // -- Touch events --
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touches = e.touches;
+    touchCount.current = touches.length;
+    didTouchDrag.current = false;
+
+    if (touches.length === 1) {
+      // Single finger: start pan
+      touchStart1.current = { x: touches[0].clientX, y: touches[0].clientY };
+      touchPanStart.current = { x: panRef.current.x, y: panRef.current.y };
+    } else if (touches.length === 2) {
+      // Two fingers: start pinch-to-zoom
+      pinchStartDist.current  = touchDist(touches[0], touches[1]);
+      pinchStartScale.current = scaleRef.current;
+      const mid = touchMid(touches[0], touches[1]);
+      const rect = containerRef.current!.getBoundingClientRect();
+      pinchStartMid.current = { x: mid.x - rect.left, y: mid.y - rect.top };
+      touchPanStart.current = { x: panRef.current.x, y: panRef.current.y };
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const touches = e.touches;
+
+    if (touches.length === 1 && touchCount.current === 1) {
+      // Single finger pan
+      const dx = touches[0].clientX - touchStart1.current.x;
+      const dy = touches[0].clientY - touchStart1.current.y;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) didTouchDrag.current = true;
+      setPan({ x: touchPanStart.current.x + dx, y: touchPanStart.current.y + dy });
+    } else if (touches.length === 2) {
+      didTouchDrag.current = true;
+      const dist = touchDist(touches[0], touches[1]);
+      const ratio = dist / pinchStartDist.current;
+      const newScale = clamp(pinchStartScale.current * ratio, MIN_SCALE, MAX_SCALE);
+
+      // Zoom toward the midpoint of the two fingers
+      const scaleRatio = newScale / pinchStartScale.current;
+      const mx = pinchStartMid.current.x;
+      const my = pinchStartMid.current.y;
+      setScale(newScale);
+      setPan({
+        x: mx - (mx - touchPanStart.current.x) * scaleRatio,
+        y: my - (my - touchPanStart.current.y) * scaleRatio,
+      });
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    // If it was a tap (not a drag), and we're in placing mode, place a pin
+    if (!didTouchDrag.current && touchCount.current === 1 && e.changedTouches.length === 1) {
+      const touch = e.changedTouches[0];
+      if (placing && containerRef.current && imgRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const mx   = touch.clientX - rect.left;
+        const my   = touch.clientY - rect.top;
+        const imgW = imgRef.current.offsetWidth  || 1;
+        const imgH = imgRef.current.offsetHeight || 1;
+        const imgX = (mx - panRef.current.x) / scaleRef.current;
+        const imgY = (my - panRef.current.y) / scaleRef.current;
+        setPendingXY({
+          x: clamp((imgX / imgW) * 100, 0, 100),
+          y: clamp((imgY / imgH) * 100, 0, 100),
+        });
+        setCreateForm(emptyCreate);
+        setCreateOpen(true);
+        setPlacing(false);
+      }
+    }
+    touchCount.current = e.touches.length;
+  };
+
   // -- Map background click -> place marker --
   const handleMapClick = (e: React.MouseEvent) => {
     if (didDrag.current) { didDrag.current = false; return; }
@@ -226,9 +327,9 @@ export default function MapPage() {
   };
 
   // -- Pin click --
-  const openMarker = (e: React.MouseEvent, marker: MapMarker) => {
+  const openMarker = (e: React.MouseEvent | React.TouchEvent, marker: MapMarker) => {
     e.stopPropagation();
-    if (didDrag.current) return;
+    if (didDrag.current || didTouchDrag.current) return;
     if (marker.location_id) {
       const loc = locations.find(l => l.id === marker.location_id);
       if (loc) {
@@ -330,13 +431,16 @@ export default function MapPage() {
     <>
       <div
         ref={containerRef}
-        className={`fixed inset-0 md:left-56 overflow-hidden bg-[#12100d] z-10
+        className={`fixed inset-0 md:left-56 overflow-hidden bg-[#12100d] z-10 touch-none
           ${placing ? 'cursor-crosshair' : isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={stopDrag}
         onMouseLeave={stopDrag}
         onClick={handleMapClick}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
         {/* Map image + markers (transformed together) */}
         <div
@@ -370,8 +474,16 @@ export default function MapPage() {
                 zIndex:          10,
               }}
               onClick={(e) => openMarker(e, marker)}
+              onTouchEnd={(e) => {
+                if (!didTouchDrag.current) {
+                  e.stopPropagation();
+                  openMarker(e, marker);
+                }
+              }}
               onMouseDown={(e) => e.stopPropagation()}
             >
+              {/* Invisible larger tap target for mobile */}
+              <div className="absolute inset-0 -m-3 md:-m-0" style={{ minWidth: 44, minHeight: 44 }} />
               <div className="flex flex-col items-center drop-shadow-xl select-none">
                 <div className={`relative w-7 h-7 rounded-full border-2 border-white shadow-lg
                                 flex items-center justify-center
@@ -395,13 +507,14 @@ export default function MapPage() {
           ))}
         </div>
 
-        {/* Toolbar */}
+        {/* ── Toolbar ── */}
         <div
-          className="absolute top-4 right-4 z-20 flex items-center gap-2"
+          className="absolute top-4 right-4 z-20 flex flex-col md:flex-row items-end md:items-center gap-2"
           onClick={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
         >
-          {/* Map selector */}
+          {/* Row 1 on mobile: map selector */}
           <select
             value={mapSlug}
             onChange={(e) => router.push(`/c/${campaign.slug}/map/${e.target.value}`)}
@@ -418,48 +531,67 @@ export default function MapPage() {
             ))}
           </select>
 
-          {!loading && markers.length > 0 && (
-            <span className="px-2 py-1 bg-card/80 backdrop-blur-sm border border-border-subtle
-                             rounded text-[10px] font-mono text-text-muted shadow">
-              {markers.length} pin{markers.length !== 1 ? 's' : ''}
+          {/* Row 2 on mobile: action buttons */}
+          <div className="flex items-center gap-2">
+            {/* Pin count — desktop only */}
+            {!loading && markers.length > 0 && (
+              <span className="hidden md:inline-flex px-2 py-1 bg-card/80 backdrop-blur-sm border border-border-subtle
+                               rounded text-[10px] font-mono text-text-muted shadow">
+                {markers.length} pin{markers.length !== 1 ? 's' : ''}
+              </span>
+            )}
+
+            <button
+              onClick={() => setPlacing(p => !p)}
+              className={`px-3 py-1.5 rounded text-xs font-mono font-bold shadow-lg transition-all
+                ${placing
+                  ? 'bg-accent-gold text-deep ring-2 ring-accent-gold/50'
+                  : 'bg-card/90 backdrop-blur-sm text-text-primary hover:bg-card border border-border-subtle'}`}
+            >
+              {placing
+                ? <><Icon name="explore" className="text-xs align-middle" /> <span className="hidden md:inline">Click to Place</span><span className="md:hidden">Placing</span>&hellip;</>
+                : <><Icon name="push_pin" className="text-xs align-middle" /> Add Pin</>}
+            </button>
+
+            <button onClick={fitMap} title="Fit to screen"
+              className="px-2.5 py-1.5 rounded text-xs font-mono bg-card/90 backdrop-blur-sm
+                         text-text-muted hover:text-text-primary border border-border-subtle shadow-lg transition-colors">
+              &#x2b13;
+            </button>
+            <button onClick={() => zoomCenter(1.25)} title="Zoom in"
+              className="w-7 h-7 rounded text-sm font-mono bg-card/90 backdrop-blur-sm
+                         text-text-muted hover:text-text-primary border border-border-subtle shadow-lg transition-colors">
+              +
+            </button>
+            <button onClick={() => zoomCenter(0.8)} title="Zoom out"
+              className="w-7 h-7 rounded text-sm font-mono bg-card/90 backdrop-blur-sm
+                         text-text-muted hover:text-text-primary border border-border-subtle shadow-lg transition-colors">
+              &minus;
+            </button>
+
+            {/* Scale % — desktop only */}
+            <span className="hidden md:inline-flex px-2 py-1 bg-card/80 backdrop-blur-sm border border-border-subtle
+                             rounded text-[10px] font-mono text-text-muted shadow min-w-[3.5rem] text-center">
+              {Math.round(scale * 100)}%
             </span>
-          )}
 
-          <button
-            onClick={() => setPlacing(p => !p)}
-            className={`px-3 py-1.5 rounded text-xs font-mono font-bold shadow-lg transition-all
-              ${placing
-                ? 'bg-accent-gold text-deep ring-2 ring-accent-gold/50'
-                : 'bg-card/90 backdrop-blur-sm text-text-primary hover:bg-card border border-border-subtle'}`}
-          >
-            {placing ? <><Icon name="explore" className="text-xs align-middle" /> Click to Place…</> : <><Icon name="push_pin" className="text-xs align-middle" /> Add Pin</>}
-          </button>
-
-          <button onClick={fitMap} title="Fit to screen"
-            className="px-2.5 py-1.5 rounded text-xs font-mono bg-card/90 backdrop-blur-sm
-                       text-text-muted hover:text-text-primary border border-border-subtle shadow-lg transition-colors">
-            ⊡
-          </button>
-          <button onClick={() => zoomCenter(1.25)} title="Zoom in"
-            className="w-7 h-7 rounded text-sm font-mono bg-card/90 backdrop-blur-sm
-                       text-text-muted hover:text-text-primary border border-border-subtle shadow-lg transition-colors">
-            +
-          </button>
-          <button onClick={() => zoomCenter(0.8)} title="Zoom out"
-            className="w-7 h-7 rounded text-sm font-mono bg-card/90 backdrop-blur-sm
-                       text-text-muted hover:text-text-primary border border-border-subtle shadow-lg transition-colors">
-            −
-          </button>
-          <span className="px-2 py-1 bg-card/80 backdrop-blur-sm border border-border-subtle
-                           rounded text-[10px] font-mono text-text-muted shadow min-w-[3.5rem] text-center">
-            {Math.round(scale * 100)}%
-          </span>
+            {/* Legend toggle — mobile only */}
+            <button
+              onClick={() => setShowLegend(l => !l)}
+              title="Legend"
+              className="md:hidden w-7 h-7 rounded text-sm font-mono bg-card/90 backdrop-blur-sm
+                         text-text-muted hover:text-text-primary border border-border-subtle shadow-lg transition-colors"
+            >
+              ?
+            </button>
+          </div>
         </div>
 
-        {/* Legend */}
+        {/* Legend — always visible on desktop, toggled on mobile */}
         <div
-          className="absolute bottom-4 left-4 z-20 flex flex-col gap-1.5 bg-card/80 backdrop-blur-sm
-                     border border-border-subtle rounded-lg px-3 py-2 text-[10px] font-mono text-text-muted"
+          className={`absolute bottom-4 left-4 z-20 flex-col gap-1.5 bg-card/80 backdrop-blur-sm
+                     border border-border-subtle rounded-lg px-3 py-2 text-[10px] font-mono text-text-muted
+                     ${showLegend ? 'flex md:flex' : 'hidden md:flex'}`}
           onClick={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
         >
@@ -473,18 +605,28 @@ export default function MapPage() {
           </div>
         </div>
 
-        {/* Placing hint */}
+        {/* Placing hint — with cancel button for mobile */}
         {placing && (
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3
                          px-5 py-2.5 bg-accent-gold text-deep text-xs font-mono font-bold
-                         rounded-full shadow-xl pointer-events-none animate-pulse">
-            Click anywhere on the map to drop a pin — ESC to cancel
+                         rounded-full shadow-xl animate-pulse">
+            <span className="pointer-events-none">
+              <span className="hidden md:inline">Click anywhere on the map to drop a pin &mdash; ESC to cancel</span>
+              <span className="md:hidden">Tap to drop a pin</span>
+            </span>
+            <button
+              onClick={(e) => { e.stopPropagation(); setPlacing(false); }}
+              className="md:hidden pointer-events-auto bg-deep/80 text-accent-gold px-2 py-0.5 rounded-full
+                         text-[10px] font-bold hover:bg-deep transition-colors"
+            >
+              &times; Cancel
+            </button>
           </div>
         )}
 
         {!imgLoaded && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <p className="text-text-muted font-mono text-sm">Loading map…</p>
+            <p className="text-text-muted font-mono text-sm">Loading map&hellip;</p>
           </div>
         )}
       </div>
