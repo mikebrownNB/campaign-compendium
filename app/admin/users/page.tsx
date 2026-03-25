@@ -179,19 +179,19 @@ export default function UsersPage() {
                   <td className="px-4 py-3 font-mono text-sm text-text-primary">
                     {u.display_name || <span className="text-text-muted italic">—</span>}
                   </td>
-                  <td className="px-4 py-3 hidden sm:table-cell font-mono text-[0.65rem] text-text-secondary">
+                  <td className="px-4 py-3 hidden sm:table-cell font-mono text-base text-text-secondary">
                     {u.email || <span className="text-text-muted italic">—</span>}
                   </td>
                   <td className="px-4 py-3 hidden md:table-cell">
                     {u.role === 'super_admin' ? (
-                      <span className="font-mono text-[0.6rem] text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-2 py-0.5">Super Admin</span>
+                      <span className="font-mono text-base text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-2 py-0.5">Super Admin</span>
                     ) : u.role === 'admin' ? (
-                      <span className="font-mono text-[0.6rem] text-accent-gold bg-accent-gold/10 border border-accent-gold/30 rounded px-2 py-0.5">Admin</span>
+                      <span className="font-mono text-base text-accent-gold bg-accent-gold/10 border border-accent-gold/30 rounded px-2 py-0.5">Admin</span>
                     ) : (
-                      <span className="font-mono text-[0.6rem] text-text-muted">Member</span>
+                      <span className="font-mono text-base text-text-muted">Member</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 hidden lg:table-cell font-mono text-[0.65rem] text-text-muted">
+                  <td className="px-4 py-3 hidden lg:table-cell font-mono text-base text-text-muted">
                     {u.last_sign_in ? new Date(u.last_sign_in).toLocaleDateString() : 'Never'}
                   </td>
                   <td className="px-4 py-3">
@@ -204,20 +204,20 @@ export default function UsersPage() {
                             setError(null);
                             setModal('role');
                           }}
-                          className="font-mono text-[0.65rem] text-text-muted hover:text-accent-purple transition-colors"
+                          className="font-mono text-base text-text-muted hover:text-accent-purple transition-colors"
                         >
                           Change Role
                         </button>
                       )}
                       <button
                         onClick={() => { setSelected(u); setTempPw(''); setError(null); setModal('reset'); }}
-                        className="font-mono text-[0.65rem] text-text-muted hover:text-accent-gold transition-colors"
+                        className="font-mono text-base text-text-muted hover:text-accent-gold transition-colors"
                       >
                         Reset PW
                       </button>
                       <button
                         onClick={() => { setSelected(u); setModal('delete'); }}
-                        className="font-mono text-[0.65rem] text-text-muted hover:text-accent-red transition-colors"
+                        className="font-mono text-base text-text-muted hover:text-accent-red transition-colors"
                       >
                         Delete
                       </button>

@@ -92,22 +92,22 @@ export default function SessionsPage() {
                 onClick={() => setExpandedId(expandedId === s.id ? null : s.id)}
               >
                 <div>
-                  <h3 className="font-display text-sm font-bold text-text-primary">
+                  <h3 className="font-display text-base font-bold text-text-primary">
                     Session {s.number} — {s.title}
                   </h3>
                   <div className="flex gap-4 mt-1">
-                    <span className="font-mono text-[0.65rem] text-text-muted">{s.real_date}</span>
-                    <span className="font-mono text-[0.65rem] text-accent-purple">{s.ingame_date}</span>
+                    <span className="font-mono text-base text-text-muted">{s.real_date}</span>
+                    <span className="font-mono text-base text-accent-purple">{s.ingame_date}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button onClick={(e) => { e.stopPropagation(); openEdit(s); }} className="text-text-muted hover:text-accent-gold text-xs font-mono">Edit</button>
+                  <button onClick={(e) => { e.stopPropagation(); openEdit(s); }} className="text-text-muted hover:text-accent-gold text-base font-mono">Edit</button>
                   <Icon name="expand_more" className={`text-accent-purple transition-transform text-base ${expandedId === s.id ? 'rotate-180' : ''}`} />
                 </div>
               </div>
               {expandedId === s.id && (
                 <div className="px-4 pb-4 pt-0 border-t border-border-subtle">
-                  <p className="text-text-secondary text-sm leading-relaxed mt-3">
+                  <p className="text-text-secondary text-base leading-relaxed mt-3">
                     {linkNpcs(s.summary, npcs, setViewingNpc)}
                   </p>
                   <div className="flex items-center gap-4 mt-3">
@@ -117,12 +117,12 @@ export default function SessionsPage() {
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        className="text-accent-purple hover:text-accent-gold text-xs font-mono transition-colors"
+                        className="text-accent-purple hover:text-accent-gold text-base font-mono transition-colors"
                       >
-                        <Icon name="description" className="text-sm align-middle" /> Full Notes ↗
+                        <Icon name="description" className="text-base align-middle" /> Full Notes ↗
                       </a>
                     )}
-                    <button onClick={() => setDeleteId(s.id)} className="text-text-muted hover:text-accent-red text-xs font-mono">Delete session</button>
+                    <button onClick={() => setDeleteId(s.id)} className="text-text-muted hover:text-accent-red text-base font-mono">Delete session</button>
                   </div>
                 </div>
               )}
