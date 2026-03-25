@@ -28,6 +28,7 @@ Rules:
 - Keep descriptions concise (1-2 sentences).
 - Tags should be lowercase, relevant keywords.
 - Do NOT include entities that appear in the "already known" lists below — those already exist in the database.
+- NEVER extract Player Characters as NPCs. Player characters are listed separately below — ignore them completely.
 - If there are no entities of a given type, return an empty array for that type.`;
 
 function extractDocId(url: string): string | null {
@@ -86,23 +87,29 @@ export async function POST(
       docText = docText.slice(0, MAX_CHARS);
     }
 
-    // Fetch existing entities for dedup
-    const [existingNpcs, existingLoot, existingThreads, existingLocations, existingFactions] = await Promise.all([
+    // Fetch existing entities for dedup + player names to exclude
+    const [existingNpcs, existingLoot, existingThreads, existingLocations, existingFactions, existingPlayers] = await Promise.all([
       supabaseAdmin.from('npcs').select('name').eq('campaign_id', campaignId),
       supabaseAdmin.from('loot_items').select('name').eq('campaign_id', campaignId),
       supabaseAdmin.from('threads').select('title').eq('campaign_id', campaignId),
       supabaseAdmin.from('locations').select('name').eq('campaign_id', campaignId),
       supabaseAdmin.from('factions').select('name').eq('campaign_id', campaignId),
+      supabaseAdmin.from('players').select('name').eq('campaign_id', campaignId),
     ]);
 
+    const playerNames   = new Set((existingPlayers.data ?? []).map(p => p.name.toLowerCase()));
     const npcNames      = new Set((existingNpcs.data ?? []).map(n => n.name.toLowerCase()));
     const lootNames     = new Set((existingLoot.data ?? []).map(l => l.name.toLowerCase()));
     const threadTitles  = new Set((existingThreads.data ?? []).map(t => t.title.toLowerCase()));
     const locationNames = new Set((existingLocations.data ?? []).map(l => l.name.toLowerCase()));
     const factionNames  = new Set((existingFactions.data ?? []).map(f => f.name.toLowerCase()));
 
+    // Add player names to NPC dedup set so they're never created as NPCs
+    for (const name of playerNames) npcNames.add(name);
+
     // Build the user message with existing names for Claude context
     const knownSection = [
+      `Player Characters (NEVER extract these as NPCs): ${(existingPlayers.data ?? []).map(p => p.name).join(', ') || '(none)'}`,
       `NPCs: ${(existingNpcs.data ?? []).map(n => n.name).join(', ') || '(none)'}`,
       `Loot: ${(existingLoot.data ?? []).map(l => l.name).join(', ') || '(none)'}`,
       `Threads: ${(existingThreads.data ?? []).map(t => t.title).join(', ') || '(none)'}`,
