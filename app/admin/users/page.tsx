@@ -21,11 +21,12 @@ export default function UsersPage() {
   const [users,      setUsers]      = useState<AppUser[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [isAdmin,    setIsAdmin]    = useState(false);
-  const [modal,      setModal]      = useState<'create' | 'reset' | 'delete' | 'role' | null>(null);
+  const [modal,      setModal]      = useState<'create' | 'reset' | 'delete' | 'role' | 'email' | null>(null);
   const [selected,   setSelected]   = useState<AppUser | null>(null);
   const [createForm, setCreateForm] = useState(emptyCreate);
   const [tempPw,     setTempPw]     = useState('');
   const [newRole,    setNewRole]    = useState<'member' | 'admin'>('member');
+  const [newEmail,   setNewEmail]   = useState('');
   const [saving,     setSaving]     = useState(false);
   const [error,      setError]      = useState<string | null>(null);
   const [success,    setSuccess]    = useState<string | null>(null);
@@ -120,6 +121,25 @@ export default function UsersPage() {
     }
   };
 
+  const handleChangeEmail = async () => {
+    if (!selected || !newEmail.trim()) { setError('Enter a new email address.'); return; }
+    setSaving(true); setError(null);
+    const res = await fetch(`/api/admin/users/${selected.id}`, {
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ email: newEmail.trim() }),
+    });
+    setSaving(false);
+    if (res.ok) {
+      setModal(null); setNewEmail(''); setSelected(null);
+      await loadUsers();
+      flash(`Email updated for "${selected.display_name}".`, 'ok');
+    } else {
+      const body = await res.json();
+      setError(body.error ?? 'Failed to update email.');
+    }
+  };
+
   const handleChangeRole = async () => {
     if (!selected) return;
     setSaving(true); setError(null);
@@ -207,6 +227,14 @@ export default function UsersPage() {
                           className="font-mono text-base text-text-muted hover:text-accent-purple transition-colors"
                         >
                           Change Role
+                        </button>
+                      )}
+                      {isSuperAdmin && (
+                        <button
+                          onClick={() => { setSelected(u); setNewEmail(u.email ?? ''); setError(null); setModal('email'); }}
+                          className="font-mono text-base text-text-muted hover:text-accent-teal transition-colors"
+                        >
+                          Change Email
                         </button>
                       )}
                       <button
@@ -313,6 +341,29 @@ export default function UsersPage() {
           <Button variant="ghost" onClick={() => setModal(null)}>Cancel</Button>
           <Button onClick={handleChangeRole} disabled={saving}>
             {saving ? 'Saving…' : 'Save Role'}
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Change email modal */}
+      <Modal open={modal === 'email'} onClose={() => setModal(null)} title="Change Email Address">
+        <p className="text-sm text-text-secondary mb-3">
+          Update email address for{' '}
+          <span className="text-text-primary font-mono">{selected?.display_name}</span>.
+          The change takes effect immediately.
+        </p>
+        <Input label="New Email Address" type="email" value={newEmail}
+          onChange={(e) => setNewEmail(e.target.value)}
+          placeholder="new@example.com" />
+        {error && (
+          <p className="mt-2 font-mono text-[0.65rem] text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-3 py-2">
+            <Icon name="close" className="text-sm align-middle" /> {error}
+          </p>
+        )}
+        <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border-subtle">
+          <Button variant="ghost" onClick={() => setModal(null)}>Cancel</Button>
+          <Button onClick={handleChangeEmail} disabled={saving}>
+            {saving ? 'Saving…' : 'Update Email'}
           </Button>
         </div>
       </Modal>
