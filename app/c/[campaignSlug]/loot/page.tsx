@@ -36,7 +36,7 @@ export default function LootPage() {
 
   // Search & filter
   const [search,        setSearch]        = useState('');
-  const [filterStatuses, setFilterStatuses] = useState<Set<LootStatus>>(new Set(['Carried', 'Known']));
+  const [filterStatuses, setFilterStatuses] = useState<Set<LootStatus>>(new Set<LootStatus>(['Carried', 'Known']));
   const [filterSource,   setFilterSource]   = useState('');
   const [filterHolder,   setFilterHolder]   = useState('');
   const [filterFaction,  setFilterFaction]  = useState('');
@@ -157,7 +157,7 @@ export default function LootPage() {
             </select>
           ))}
           {activeFilterCount > 0 && (
-            <button onClick={() => { setFilterStatuses(new Set(LOOT_STATUSES)); setFilterSource(''); setFilterHolder(''); setFilterFaction(''); }}
+            <button onClick={() => { setFilterStatuses(new Set<LootStatus>(LOOT_STATUSES)); setFilterSource(''); setFilterHolder(''); setFilterFaction(''); }}
               className="font-mono text-xs text-accent-red hover:text-accent-red/80 transition-colors">
               Clear {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}
             </button>
