@@ -172,10 +172,10 @@ export default function LootPage() {
         <EmptyState icon="paid" message={search || activeFilterCount > 0 || statusFiltered ? 'No items match your filters.' : 'No loot yet. Create your first item.'} />
       ) : (
         <div className="overflow-x-auto border border-border-subtle rounded-lg">
-          <table className="w-full border-collapse min-w-[900px]">
+          <table className="w-full border-collapse min-w-[800px]">
             <thead>
               <tr>
-                {(['name', 'source', 'holder', 'price'] as SortKey[]).map((col, ci) => (
+                {(['name', 'holder', 'price'] as SortKey[]).map((col, ci) => (
                   <th key={col}
                     onClick={() => toggleSort(col)}
                     className={`text-left p-3 font-display text-[0.65rem] tracking-wider uppercase text-accent-purple bg-accent-purple/5 border-b border-border-subtle cursor-pointer hover:bg-accent-purple/10 transition-colors select-none ${ci === 0 ? 'rounded-tl-lg' : ''}`}
@@ -201,7 +201,6 @@ export default function LootPage() {
                       {l.name}
                     </span>
                   </td>
-                  <td className="p-3 text-text-muted font-mono text-xs">{l.source || '—'}</td>
                   <td className="p-3 text-text-secondary text-sm">{l.holder || '—'}</td>
                   <td className="p-3 font-mono text-xs text-accent-gold">{l.price || '—'}</td>
                   <td className="p-3">
