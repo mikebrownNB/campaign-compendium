@@ -82,9 +82,42 @@ function GeneralTab({ campaign, isOwner }: { campaign: any; isOwner: boolean }) 
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
+  // Favicon upload state
+  const [faviconUrl, setFaviconUrl] = useState<string>(campaign.settings?.favicon_url || '');
+  const [faviconFile, setFaviconFile] = useState<File | null>(null);
+  const [faviconPreview, setFaviconPreview] = useState<string>(campaign.settings?.favicon_url || '');
+  const [uploadingFavicon, setUploadingFavicon] = useState(false);
+
+  const handleFaviconSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFaviconFile(file);
+    setFaviconPreview(URL.createObjectURL(file));
+  };
+
+  const uploadFavicon = async (): Promise<string | null> => {
+    if (!faviconFile) return faviconUrl || null;
+    const supabase = getSupabaseBrowser();
+    const ext = faviconFile.name.split('.').pop() ?? 'png';
+    const path = `${campaign.id}/favicon_${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from('maps').upload(path, faviconFile);
+    if (error) { console.error('Favicon upload failed:', error); return faviconUrl || null; }
+    const { data: { publicUrl } } = supabase.storage.from('maps').getPublicUrl(path);
+    return publicUrl;
+  };
+
+  const removeFavicon = () => {
+    setFaviconFile(null);
+    setFaviconPreview('');
+    setFaviconUrl('');
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
+      setUploadingFavicon(!!faviconFile);
+      const newFaviconUrl = await uploadFavicon();
+      setUploadingFavicon(false);
       await fetch(`/api/campaigns/${campaign.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -93,12 +126,15 @@ function GeneralTab({ campaign, isOwner }: { campaign: any; isOwner: boolean }) 
           name: form.name,
           subtitle: form.subtitle,
           description: form.description,
-          settings: { ...campaign.settings, tagline: form.tagline },
+          settings: { ...campaign.settings, tagline: form.tagline, favicon_url: newFaviconUrl || undefined },
         }),
       });
+      if (newFaviconUrl) setFaviconUrl(newFaviconUrl);
+      setFaviconFile(null);
       router.refresh();
     } finally {
       setSaving(false);
+      setUploadingFavicon(false);
     }
   };
 
@@ -127,6 +163,50 @@ function GeneralTab({ campaign, isOwner }: { campaign: any; isOwner: boolean }) 
         <Input label="Subtitle" value={form.subtitle} onChange={e => setForm(f => ({ ...f, subtitle: e.target.value }))} placeholder="e.g. campaign world name" />
         <Textarea label="Description" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
         <Input label="Tagline" value={form.tagline} onChange={e => setForm(f => ({ ...f, tagline: e.target.value }))} placeholder="Optional motto or quote" />
+
+        {/* Favicon Upload */}
+        <div className="mt-4">
+          <label className="block font-display text-xs tracking-wider uppercase text-text-muted mb-1">
+            Tab Icon (Favicon)
+          </label>
+          <p className="text-text-muted font-mono text-[0.65rem] mb-2">
+            Upload a small image (ICO, PNG, SVG) to show in the browser tab for this campaign.
+          </p>
+          <div className="flex items-center gap-4">
+            {faviconPreview ? (
+              <div className="relative shrink-0">
+                <img
+                  src={faviconPreview}
+                  alt="Favicon preview"
+                  className="w-10 h-10 rounded border border-border-subtle object-contain bg-surface"
+                />
+                <button
+                  type="button"
+                  onClick={removeFavicon}
+                  className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-accent-red text-white rounded-full flex items-center justify-center text-xs hover:bg-red-500 transition-colors"
+                  title="Remove favicon"
+                >
+                  ×
+                </button>
+              </div>
+            ) : (
+              <div className="w-10 h-10 rounded border border-dashed border-border-subtle flex items-center justify-center text-text-muted shrink-0">
+                <Icon name="image" className="text-lg" />
+              </div>
+            )}
+            <label className="cursor-pointer text-xs font-mono text-accent-gold hover:text-accent-gold/80 transition-colors border border-border-subtle rounded px-3 py-1.5 hover:bg-card-hover">
+              {faviconPreview ? 'Replace' : 'Upload'}
+              <input
+                type="file"
+                accept="image/png,image/x-icon,image/svg+xml,image/ico,image/vnd.microsoft.icon,.ico,.png,.svg"
+                onChange={handleFaviconSelect}
+                className="hidden"
+              />
+            </label>
+            {uploadingFavicon && <span className="text-xs text-text-muted font-mono">Uploading…</span>}
+          </div>
+        </div>
+
         <div className="mt-4">
           <Button onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save Changes'}</Button>
         </div>

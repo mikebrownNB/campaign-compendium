@@ -13,6 +13,7 @@ export interface Campaign {
 
 export interface CampaignSettings {
   tagline?: string;
+  favicon_url?: string;
   calendar?: CalendarConfig;
   widgets?: WidgetConfig[];
 }
