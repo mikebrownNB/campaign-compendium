@@ -110,6 +110,7 @@ create table if not exists factions (
   status      text not null default 'Unknown',
   description text not null default '',
   tags        text[] default '{}',
+  logo_url    text,
   created_at  timestamptz default now(),
   updated_at  timestamptz default now()
 );

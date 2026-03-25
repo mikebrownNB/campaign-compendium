@@ -109,6 +109,7 @@ export interface Faction {
   status: string;
   description: string;
   tags: string[];
+  logo_url?: string;
   created_at?: string;
   updated_at?: string;
 }

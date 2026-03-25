@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useCampaignCrud } from '@/lib/useCampaignCrud';
+import { getSupabaseBrowser } from '@/lib/supabase-browser';
+import { useCampaign } from '@/lib/CampaignContext';
 import type { Faction, NPC, Thread, GameLocation } from '@/lib/types';
 import { PageHeader, Button, Tag, Input, Textarea, EmptyState, ConfirmDelete } from '@/components/UI';
 import { Modal } from '@/components/Modal';
@@ -10,7 +12,7 @@ import { NpcDetailSlideOut } from '@/components/NpcDetailSlideOut';
 import { Icon } from '@/components/Icon';
 import Link from 'next/link';
 
-const emptyFaction = { name: '', status: '', description: '', tags: [] as string[] };
+const emptyFaction = { name: '', status: '', description: '', tags: [] as string[], logo_url: '' };
 
 const STATUS_COLORS: Record<string, string> = {
   'Hostile': 'border-l-accent-red',
@@ -31,17 +33,23 @@ const STATUS_TAG_VARIANT: Record<string, string> = {
 };
 
 export default function FactionsPage() {
+  const { campaign } = useCampaign();
   const { items: factions, loading, create, update, remove } = useCampaignCrud<Faction>('factions');
   const { items: npcs } = useCampaignCrud<NPC>('npcs');
   const { items: threads } = useCampaignCrud<Thread>('threads');
   const { items: locations } = useCampaignCrud<GameLocation>('locations');
 
-  const [modal, setModal] = useState<'create' | 'edit' | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
   const [form, setForm] = useState(emptyFaction);
   const [editId, setEditId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [selectedFaction, setSelectedFaction] = useState<Faction | null>(null);
-  const [viewingNpc,      setViewingNpc]      = useState<NPC | null>(null);
+  const [viewingNpc, setViewingNpc] = useState<NPC | null>(null);
+
+  // Logo upload state
+  const [logoFile,    setLogoFile]    = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string>('');
 
   // Cross-reference data for the selected faction
   const relatedData = useMemo(() => {
@@ -82,18 +90,48 @@ export default function FactionsPage() {
     return { npcs: relatedNpcs, threads: relatedThreads, locations: relatedLocations };
   }, [selectedFaction, npcs, threads, locations]);
 
-  const openCreate = () => { setForm(emptyFaction); setEditId(null); setModal('create'); };
+  const openCreate = () => {
+    setForm(emptyFaction);
+    setEditId(null);
+    setLogoFile(null);
+    setLogoPreview('');
+    setEditOpen(true);
+  };
+
   const openEdit = (f: Faction) => {
-    setForm({ name: f.name, status: f.status, description: f.description, tags: f.tags || [] });
+    setForm({ name: f.name, status: f.status, description: f.description, tags: f.tags || [], logo_url: f.logo_url || '' });
     setEditId(f.id);
-    setModal('edit');
+    setLogoFile(null);
+    setLogoPreview(f.logo_url || '');
+    setEditOpen(true);
+  };
+
+  const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(file));
   };
 
   const handleSave = async () => {
     if (!form.name.trim()) return;
-    if (modal === 'create') await create(form);
-    else if (editId) await update({ id: editId, ...form });
-    setModal(null);
+    setSaving(true);
+    let logo_url = form.logo_url || null;
+    if (logoFile) {
+      const supabase = getSupabaseBrowser();
+      const ext = logoFile.name.split('.').pop() ?? 'png';
+      const path = `${campaign.id}/faction_logo_${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from('maps').upload(path, logoFile);
+      if (!error) {
+        const { data: { publicUrl } } = supabase.storage.from('maps').getPublicUrl(path);
+        logo_url = publicUrl;
+      }
+    }
+    const data = { ...form, logo_url: logo_url || undefined };
+    if (editId) await update({ id: editId, ...data });
+    else        await create(data);
+    setSaving(false);
+    setEditOpen(false);
   };
 
   // When selected faction's data changes (after edit), keep it in sync
@@ -126,15 +164,26 @@ export default function FactionsPage() {
                            relative overflow-hidden group border-l-4 ${borderColor}`}
               >
                 <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-accent-purple to-accent-gold opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="font-display text-base font-bold text-text-primary group-hover:text-accent-gold transition-colors">
-                    {f.name}
-                  </h3>
-                  <Tag variant={STATUS_TAG_VARIANT[f.status] || 'faction'}>
-                    {f.status}
-                  </Tag>
+                <div className="flex items-start gap-3 mb-2">
+                  {f.logo_url && (
+                    <img
+                      src={f.logo_url}
+                      alt={`${f.name} logo`}
+                      className="w-[125px] h-[125px] rounded-lg object-cover border border-border-subtle shrink-0"
+                    />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between mb-1">
+                      <h3 className="font-display text-base font-bold text-text-primary group-hover:text-accent-gold transition-colors">
+                        {f.name}
+                      </h3>
+                      <Tag variant={STATUS_TAG_VARIANT[f.status] || 'faction'}>
+                        {f.status}
+                      </Tag>
+                    </div>
+                    <p className="text-text-secondary text-sm line-clamp-3">{f.description}</p>
+                  </div>
                 </div>
-                <p className="text-text-secondary text-sm line-clamp-3 mb-3">{f.description}</p>
                 <div className="flex items-center justify-between">
                   <div className="flex gap-1 flex-wrap">
                     {(f.tags || []).map((t) => <Tag key={t} variant={t}>{t}</Tag>)}
@@ -156,10 +205,11 @@ export default function FactionsPage() {
         onClose={() => setSelectedFaction(null)}
         title={selectedFaction?.name || ''}
         subtitle={selectedFaction?.status || ''}
+        headerImage={selectedFaction?.logo_url || undefined}
         headerExtra={
           selectedFaction ? (
             <div className="flex gap-1.5">
-              <Button size="sm" variant="secondary" onClick={() => { openEdit(selectedFaction); }}>Edit</Button>
+              <Button size="sm" variant="secondary" onClick={() => openEdit(selectedFaction)}>Edit</Button>
               <Button size="sm" variant="danger" onClick={() => { setDeleteId(selectedFaction.id); setSelectedFaction(null); }}>Delete</Button>
             </div>
           ) : undefined
@@ -285,23 +335,75 @@ export default function FactionsPage() {
         )}
       </SlideOut>
 
-      {/* ===== Create/Edit Modal ===== */}
-      <Modal open={modal !== null} onClose={() => setModal(null)} title={modal === 'create' ? 'New Faction' : 'Edit Faction'}>
-        <Input label="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-        <Input label="Status" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} placeholder="Hostile, Ally, Neutral, Employer, Complicated..." />
-        <Textarea label="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={4} />
-        <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border-subtle">
-          <Button variant="ghost" onClick={() => setModal(null)}>Cancel</Button>
-          <Button onClick={handleSave}>{modal === 'create' ? 'Create' : 'Save'}</Button>
+      {/* ===== Create/Edit SlideOut (layer 2) ===== */}
+      <SlideOut
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        title={editId ? (form.name || 'Edit Faction') : 'New Faction'}
+        layer={2}
+        headerExtra={
+          <div className="flex gap-1.5">
+            <Button size="sm" onClick={handleSave} disabled={saving}>
+              {saving ? 'Saving\u2026' : 'Save'}
+            </Button>
+          </div>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <Input label="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <Input label="Status" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} placeholder="Hostile, Ally, Neutral, Employer, Complicated..." />
+          <Textarea label="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={4} />
+
+          {/* Logo Upload */}
+          <div>
+            <label className="block font-mono text-[0.65rem] text-text-muted uppercase tracking-widest mb-1">
+              Faction Logo
+            </label>
+            <p className="text-text-muted font-mono text-[0.65rem] mb-2">
+              Displayed at 125×125 on the card and in the slideout header.
+            </p>
+            <div className="flex items-center gap-4">
+              {logoPreview ? (
+                <div className="relative shrink-0">
+                  <img
+                    src={logoPreview}
+                    alt="Logo preview"
+                    className="w-[125px] h-[125px] rounded-lg border border-border-subtle object-cover bg-surface"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => { setLogoFile(null); setLogoPreview(''); setForm(f => ({ ...f, logo_url: '' })); }}
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-accent-red text-white rounded-full flex items-center justify-center text-xs hover:bg-red-500 transition-colors"
+                    title="Remove logo"
+                  >
+                    ×
+                  </button>
+                </div>
+              ) : (
+                <div className="w-[125px] h-[125px] rounded-lg border border-dashed border-border-subtle flex items-center justify-center text-text-muted shrink-0">
+                  <Icon name="image" className="text-2xl" />
+                </div>
+              )}
+              <label className="cursor-pointer text-xs font-mono text-accent-gold hover:text-accent-gold/80 transition-colors border border-border-subtle rounded px-3 py-1.5 hover:bg-card-hover">
+                {logoPreview ? 'Replace' : 'Upload'}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif"
+                  onChange={handleLogoSelect}
+                  className="hidden"
+                />
+              </label>
+            </div>
+          </div>
         </div>
-      </Modal>
+      </SlideOut>
 
       {/* ===== Delete Confirmation ===== */}
       <Modal open={deleteId !== null} onClose={() => setDeleteId(null)} title="Delete Faction">
         <ConfirmDelete onConfirm={async () => { if (deleteId) { await remove(deleteId); setDeleteId(null); } }} onCancel={() => setDeleteId(null)} />
       </Modal>
 
-      {/* ===== NPC Detail (layer 2 \u2014 appears above faction slideout) ===== */}
+      {/* ===== NPC Detail (layer 2 — appears above faction slideout) ===== */}
       <NpcDetailSlideOut npc={viewingNpc} onClose={() => setViewingNpc(null)} layer={2} />
     </div>
   );

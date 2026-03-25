@@ -9,12 +9,13 @@ interface SlideOutProps {
   title: string;
   subtitle?: string;
   headerExtra?: React.ReactNode;
+  headerImage?: string;
   children: React.ReactNode;
   /** Stacking layer — use 1 (default) for normal slideouts, 2 for slideouts on top of other slideouts */
   layer?: 1 | 2;
 }
 
-export function SlideOut({ open, onClose, title, subtitle, headerExtra, children, layer = 1 }: SlideOutProps) {
+export function SlideOut({ open, onClose, title, subtitle, headerExtra, headerImage, children, layer = 1 }: SlideOutProps) {
   const overlayZ = layer === 2 ? 'z-[250]' : 'z-[150]';
   const panelZ   = layer === 2 ? 'z-[260]' : 'z-[160]';
 
@@ -56,9 +57,18 @@ export function SlideOut({ open, onClose, title, subtitle, headerExtra, children
         {/* Header */}
         <div className="sticky top-0 bg-deep/95 backdrop-blur-xl border-b border-border-subtle p-6 z-10">
           <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <h2 className="font-display text-xl font-bold text-accent-gold tracking-wider">{title}</h2>
-              {subtitle && <p className="font-mono text-xs text-text-muted mt-1">{subtitle}</p>}
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              {headerImage && (
+                <img
+                  src={headerImage}
+                  alt=""
+                  className="w-[125px] h-[125px] rounded-lg object-cover border border-border-subtle shrink-0"
+                />
+              )}
+              <div className="min-w-0">
+                <h2 className="font-display text-xl font-bold text-accent-gold tracking-wider">{title}</h2>
+                {subtitle && <p className="font-mono text-xs text-text-muted mt-1">{subtitle}</p>}
+              </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               {headerExtra}
