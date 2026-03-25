@@ -122,10 +122,11 @@ create table if not exists loot_items (
   details     text not null default '',
   source      text not null default '',
   holder      text,
-  status      text not null default 'Carried',
-  price       text,
-  created_at  timestamptz default now(),
-  updated_at  timestamptz default now()
+  status           text not null default 'Carried',
+  price            text,
+  sold_by_faction  text,
+  created_at       timestamptz default now(),
+  updated_at       timestamptz default now()
 );
 
 -- ===== Sessions =====

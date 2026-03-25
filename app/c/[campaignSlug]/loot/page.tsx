@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useCampaignCrud } from '@/lib/useCampaignCrud';
-import type { LootItem, LootStatus } from '@/lib/types';
+import type { LootItem, LootStatus, Faction } from '@/lib/types';
 import { LOOT_STATUSES } from '@/lib/types';
 import { PageHeader, Button, Input, Textarea, EmptyState, ConfirmDelete } from '@/components/UI';
 import { Modal } from '@/components/Modal';
@@ -16,13 +16,14 @@ const statusStyle: Record<LootStatus, string> = {
   Lost:    'text-accent-red bg-accent-red/10 border-accent-red/30',
 };
 
-const empty = { name: '', details: '', source: '', holder: '', status: 'Carried' as LootStatus, price: '' };
+const empty = { name: '', details: '', source: '', holder: '', status: 'Carried' as LootStatus, price: '', sold_by_faction: '' };
 
 type SortKey = 'name' | 'source' | 'holder' | 'price';
 type SortDir = 'asc' | 'desc';
 
 export default function LootPage() {
   const { items, loading, create, update, remove } = useCampaignCrud<LootItem>('loot-items');
+  const { items: factions } = useCampaignCrud<Faction>('factions');
 
   // Slideout state
   const [slideOpen, setSlideOpen] = useState(false);
@@ -35,16 +36,18 @@ export default function LootPage() {
 
   // Search & filter
   const [search,       setSearch]       = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
-  const [filterSource, setFilterSource] = useState('');
-  const [filterHolder, setFilterHolder] = useState('');
+  const [filterStatus,  setFilterStatus]  = useState('');
+  const [filterSource,  setFilterSource]  = useState('');
+  const [filterHolder,  setFilterHolder]  = useState('');
+  const [filterFaction, setFilterFaction] = useState('');
 
   // Sort
   const [sortKey, setSortKey] = useState<SortKey>('name');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
 
-  const uniqueSources = useMemo(() => Array.from(new Set(items.map(l => l.source).filter(Boolean))).sort(), [items]);
-  const uniqueHolders = useMemo(() => Array.from(new Set(items.map(l => l.holder).filter(Boolean) as string[])).sort(), [items]);
+  const uniqueSources  = useMemo(() => Array.from(new Set(items.map(l => l.source).filter(Boolean))).sort(), [items]);
+  const uniqueHolders  = useMemo(() => Array.from(new Set(items.map(l => l.holder).filter(Boolean) as string[])).sort(), [items]);
+  const factionNames   = useMemo(() => factions.map(f => f.name).sort(), [factions]);
 
   const processed = useMemo(() => {
     const q = search.toLowerCase();
@@ -54,11 +57,13 @@ export default function LootPage() {
         || l.details.toLowerCase().includes(q)
         || l.source.toLowerCase().includes(q)
         || (l.holder || '').toLowerCase().includes(q)
-        || (l.price || '').toLowerCase().includes(q);
-      const matchesStatus = !filterStatus || (l.status || 'Carried') === filterStatus;
-      const matchesSource = !filterSource || l.source === filterSource;
-      const matchesHolder = !filterHolder || (l.holder || '') === filterHolder;
-      return matchesSearch && matchesStatus && matchesSource && matchesHolder;
+        || (l.price || '').toLowerCase().includes(q)
+        || (l.sold_by_faction || '').toLowerCase().includes(q);
+      const matchesStatus  = !filterStatus  || (l.status || 'Carried') === filterStatus;
+      const matchesSource  = !filterSource  || l.source === filterSource;
+      const matchesHolder  = !filterHolder  || (l.holder || '') === filterHolder;
+      const matchesFaction = !filterFaction || (l.sold_by_faction || '') === filterFaction;
+      return matchesSearch && matchesStatus && matchesSource && matchesHolder && matchesFaction;
     });
     result.sort((a, b) => {
       const av = (a[sortKey] || '').toLowerCase();
@@ -66,7 +71,7 @@ export default function LootPage() {
       return av < bv ? (sortDir === 'asc' ? -1 : 1) : av > bv ? (sortDir === 'asc' ? 1 : -1) : 0;
     });
     return result;
-  }, [items, search, filterStatus, filterSource, filterHolder, sortKey, sortDir]);
+  }, [items, search, filterStatus, filterSource, filterHolder, filterFaction, sortKey, sortDir]);
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
@@ -80,7 +85,7 @@ export default function LootPage() {
 
   const openCreate = () => { setForm(empty); setEditId(null); setSlideOpen(true); };
   const openEdit   = (l: LootItem) => {
-    setForm({ name: l.name, details: l.details, source: l.source, holder: l.holder || '', status: (l.status || 'Carried') as LootStatus, price: l.price || '' });
+    setForm({ name: l.name, details: l.details, source: l.source, holder: l.holder || '', status: (l.status || 'Carried') as LootStatus, price: l.price || '', sold_by_faction: l.sold_by_faction || '' });
     setEditId(l.id);
     setSlideOpen(true);
   };
@@ -88,14 +93,14 @@ export default function LootPage() {
   const handleSave = async () => {
     if (!form.name.trim()) return;
     setSaving(true);
-    const data = { ...form, holder: form.holder || null, price: form.price || null };
+    const data = { ...form, holder: form.holder || null, price: form.price || null, sold_by_faction: form.sold_by_faction || null };
     if (editId) await update({ id: editId, ...data });
     else        await create(data);
     setSaving(false);
     setSlideOpen(false);
   };
 
-  const activeFilterCount = [filterStatus, filterSource, filterHolder].filter(Boolean).length;
+  const activeFilterCount = [filterStatus, filterSource, filterHolder, filterFaction].filter(Boolean).length;
 
   return (
     <div className="animate-fade-in">
@@ -127,8 +132,9 @@ export default function LootPage() {
             {LOOT_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
           {[
-            { value: filterSource, set: setFilterSource, label: 'All Sources', opts: uniqueSources },
-            { value: filterHolder, set: setFilterHolder, label: 'All Holders', opts: uniqueHolders },
+            { value: filterSource,  set: setFilterSource,  label: 'All Sources',  opts: uniqueSources },
+            { value: filterHolder,  set: setFilterHolder,  label: 'All Holders',  opts: uniqueHolders },
+            { value: filterFaction, set: setFilterFaction, label: 'All Factions', opts: factionNames },
           ].map(({ value, set, label, opts }) => (
             <select key={label} value={value} onChange={e => set(e.target.value)}
               className="bg-card border border-border-subtle rounded-lg px-3 py-1.5 text-sm font-mono text-text-secondary focus:outline-none focus:border-accent-purple transition-colors">
@@ -137,7 +143,7 @@ export default function LootPage() {
             </select>
           ))}
           {activeFilterCount > 0 && (
-            <button onClick={() => { setFilterStatus(''); setFilterSource(''); setFilterHolder(''); }}
+            <button onClick={() => { setFilterStatus(''); setFilterSource(''); setFilterHolder(''); setFilterFaction(''); }}
               className="font-mono text-xs text-accent-red hover:text-accent-red/80 transition-colors">
               Clear {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''}
             </button>
@@ -152,7 +158,7 @@ export default function LootPage() {
         <EmptyState icon="paid" message={search || activeFilterCount > 0 ? 'No items match your filters.' : 'No loot yet. Create your first item.'} />
       ) : (
         <div className="overflow-x-auto border border-border-subtle rounded-lg">
-          <table className="w-full border-collapse min-w-[800px]">
+          <table className="w-full border-collapse min-w-[900px]">
             <thead>
               <tr>
                 {(['name', 'source', 'holder', 'price'] as SortKey[]).map((col, ci) => (
@@ -163,6 +169,7 @@ export default function LootPage() {
                     {col === 'name' ? 'Item' : col.charAt(0).toUpperCase() + col.slice(1)} <SortIcon col={col} />
                   </th>
                 ))}
+                <th className="text-left p-3 font-display text-[0.65rem] tracking-wider uppercase text-accent-purple bg-accent-purple/5 border-b border-border-subtle">Sold By</th>
                 <th className="text-left p-3 font-display text-[0.65rem] tracking-wider uppercase text-accent-purple bg-accent-purple/5 border-b border-border-subtle">Status</th>
                 <th className="text-left p-3 font-display text-[0.65rem] tracking-wider uppercase text-accent-purple bg-accent-purple/5 border-b border-border-subtle">Details</th>
                 <th className="w-10 bg-accent-purple/5 border-b border-border-subtle rounded-tr-lg" />
@@ -183,6 +190,11 @@ export default function LootPage() {
                   <td className="p-3 text-text-muted font-mono text-xs">{l.source || '—'}</td>
                   <td className="p-3 text-text-secondary text-sm">{l.holder || '—'}</td>
                   <td className="p-3 font-mono text-xs text-accent-gold">{l.price || '—'}</td>
+                  <td className="p-3">
+                    {l.sold_by_faction
+                      ? <span className="font-mono text-xs text-accent-blue">{l.sold_by_faction}</span>
+                      : <span className="text-text-muted/40 font-mono text-xs">—</span>}
+                  </td>
                   <td className="p-3">
                     {(() => {
                       const s = (l.status || 'Carried') as LootStatus;
@@ -242,6 +254,17 @@ export default function LootPage() {
           <div className="grid grid-cols-2 gap-3">
             <Input label="Source" value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} placeholder="S7 — Zendali" />
             <Input label="Holder" value={form.holder} onChange={(e) => setForm({ ...form, holder: e.target.value })} placeholder="Optional" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="font-mono text-[0.65rem] text-text-muted uppercase tracking-widest">Sold By Faction</label>
+            <select
+              value={form.sold_by_faction}
+              onChange={(e) => setForm({ ...form, sold_by_faction: e.target.value })}
+              className="bg-[#0a0a12] border border-border-subtle rounded-lg px-3 py-2 text-sm text-text-primary font-mono focus:outline-none focus:border-accent-gold/50 transition-colors"
+            >
+              <option value="">None</option>
+              {factionNames.map(f => <option key={f} value={f}>{f}</option>)}
+            </select>
           </div>
           <Textarea label="Details" value={form.details} onChange={(e) => setForm({ ...form, details: e.target.value })} rows={6} />
         </div>
