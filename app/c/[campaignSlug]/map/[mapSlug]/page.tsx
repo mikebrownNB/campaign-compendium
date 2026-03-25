@@ -482,11 +482,14 @@ export default function MapPage() {
                 zIndex:          10,
               }}
               onClick={(e) => openMarker(e, marker)}
+              onTouchStart={(e) => {
+                // Stop the container's pan logic from hijacking pin taps
+                e.stopPropagation();
+                didTouchDrag.current = false;
+              }}
               onTouchEnd={(e) => {
-                if (!didTouchDrag.current) {
-                  e.stopPropagation();
-                  openMarker(e, marker);
-                }
+                e.stopPropagation();
+                if (!didTouchDrag.current) openMarker(e, marker);
               }}
               onMouseDown={(e) => e.stopPropagation()}
             >
