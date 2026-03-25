@@ -40,8 +40,24 @@ function ConfirmInner() {
         return;
       }
 
-      // Honour redirect_to (must be a relative path) or fall back to home
-      router.replace(redirectTo && redirectTo.startsWith('/') ? redirectTo : '/');
+      // Honour redirect_to — accept relative paths or absolute URLs on the
+      // same origin (extract just the pathname so router.replace works).
+      if (redirectTo) {
+        try {
+          const parsed = new URL(redirectTo);
+          if (parsed.origin === window.location.origin) {
+            router.replace(parsed.pathname + parsed.search);
+            return;
+          }
+        } catch {
+          // Not a valid absolute URL — treat as relative path
+          if (redirectTo.startsWith('/')) {
+            router.replace(redirectTo);
+            return;
+          }
+        }
+      }
+      router.replace('/');
     });
   }, [router, searchParams]);
 
