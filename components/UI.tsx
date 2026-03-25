@@ -6,7 +6,7 @@ import { Icon } from '@/components/Icon';
 // ===== Page Header =====
 export function PageHeader({ icon, title, subtitle, children }: { icon: string; title: string; subtitle?: string; children?: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between flex-wrap gap-4 mb-8 pb-4 border-b-2 border-border-subtle pl-10 md:pl-0">
+    <div className="flex items-center justify-between flex-wrap gap-4 mb-8 pb-4 border-b-2 border-border-subtle pl-14 md:pl-0">
       <div>
         <h2 className="font-display text-xl md:text-2xl font-bold text-accent-gold flex items-center gap-3 tracking-wider">
           <Icon name={icon} className="text-xl" /> {title}
