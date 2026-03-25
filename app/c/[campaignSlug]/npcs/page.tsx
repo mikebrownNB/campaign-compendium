@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useCampaignCrud } from '@/lib/useCampaignCrud';
-import type { NPC, NpcStatus } from '@/lib/types';
+import type { NPC, NpcStatus, Faction } from '@/lib/types';
 import { PageHeader, Button, Tag, Input, Textarea, EmptyState, ConfirmDelete } from '@/components/UI';
 import { Modal } from '@/components/Modal';
 import { SlideOut } from '@/components/SlideOut';
@@ -23,6 +23,7 @@ type SortDir = 'asc' | 'desc';
 
 export default function NPCsPage() {
   const { items, loading, create, update, remove } = useCampaignCrud<NPC>('npcs');
+  const { items: factions } = useCampaignCrud<Faction>('factions');
 
   // Slideout state
   const [slideOpen, setSlideOpen] = useState(false);
@@ -247,7 +248,17 @@ export default function NPCsPage() {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Input label="Faction" value={form.faction} onChange={(e) => setForm({ ...form, faction: e.target.value })} placeholder="Optional" />
+            <div className="flex flex-col gap-1">
+              <label className="font-mono text-[0.65rem] text-text-muted uppercase tracking-widest">Faction</label>
+              <select
+                value={form.faction}
+                onChange={(e) => setForm({ ...form, faction: e.target.value })}
+                className="bg-[#0a0a12] border border-border-subtle rounded-lg px-3 py-2 text-sm text-text-primary font-mono focus:outline-none focus:border-accent-gold/50 transition-colors"
+              >
+                <option value="">None</option>
+                {factions.map(f => <option key={f.id} value={f.name}>{f.name}</option>)}
+              </select>
+            </div>
             <Input label="Location" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="Optional" />
           </div>
           <Textarea label="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={6} />
