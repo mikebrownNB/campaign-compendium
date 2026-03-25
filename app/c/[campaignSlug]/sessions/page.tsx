@@ -35,25 +35,7 @@ function linkNpcs(text: string, npcs: NPC[], onNpcClick: (npc: NPC) => void): Re
   });
 }
 
-const empty = { number: 0, title: '', real_date: '', ingame_date: '', summary: '' };
-
-const GDOC_LINKS: Record<number, string> = {
-  1:  'https://docs.google.com/document/d/1TL1kegRRLTvU3dfWIjxBv3PFAQYbgDxwSuwey4jED6w/edit',
-  2:  'https://docs.google.com/document/d/1yUo9JmjjDHQfjJyDM38gDp_sj35lQSC1JJDij_ozt3w/edit',
-  3:  'https://docs.google.com/document/d/1uSxlBe4K-rhBfIE_e46ZBwaMFXmz60dFvp1MytQK5v4/edit',
-  4:  'https://docs.google.com/document/d/1TUCbxwmHIUquWiVsO1CP40Zgzqrn_aaxgjBBAtj5ZIw/edit',
-  5:  'https://docs.google.com/document/d/1AKZYPFA6vF5he0qKIdh1hQ-ZBdfb1GuzDk1pRP-QUWo/edit',
-  6:  'https://docs.google.com/document/d/1gRtd_g6cggIeIXhf93ZE5YuFB7a7KYFxf_k29ouKJvE/edit',
-  7:  'https://docs.google.com/document/d/1F6P2SM0wT-kMG3PQju6OM5OEAmY7P1R-jxLajIaqL2A/edit',
-  8:  'https://docs.google.com/document/d/1QmWWmTVRg8ygq2OQ_GypMWZjVvJLSX5K2KGkdP_E_pY/edit',
-  9:  'https://docs.google.com/document/d/1LAtxJOYroD1eftV7CpP1IluyluLVuAIGeKAM8iA2MCU/edit',
-  10: 'https://docs.google.com/document/d/1gGU5TznAebOAvdOW0VLedncpXHt1SxH2gb_9ThWNjcw/edit',
-  11: 'https://docs.google.com/document/d/1Y6ilmImGGzNM4xO9Cwd2oPos-d8_05f7ahHxDDtkrBc/edit',
-  12: 'https://docs.google.com/document/d/1UFHU0c8CuZdBM0PwgOMcYffrg96s3FnTifOYD_cr3h8/edit',
-  13: 'https://docs.google.com/document/d/1kyFM-mv0kOtkVfz-8s7Q9llF_1Zpmx3lFVj-tWMPiS8/edit',
-  14: 'https://docs.google.com/document/d/1TW-WWxP_ouXlUkC7-5BjLJeUcKYRDIcEY2seLjJMM0Q/edit',
-  15: 'https://docs.google.com/document/d/1W-oBA8JVNS9xK5jBDzneWuiBnj930-3kLV7Ik2lSNPk/edit',
-};
+const empty = { number: 0, title: '', real_date: '', ingame_date: '', summary: '', doc_url: '' };
 
 export default function SessionsPage() {
   const { items, loading, create, update, remove } = useCampaignCrud<Session>('sessions');
@@ -66,7 +48,7 @@ export default function SessionsPage() {
   const [viewingNpc, setViewingNpc] = useState<NPC | null>(null);
 
   const openCreate = () => { setForm({ ...empty, number: items.length > 0 ? Math.max(...items.map(s => s.number)) + 1 : 1 }); setEditId(null); setModal('create'); };
-  const openEdit = (s: Session) => { setForm({ number: s.number, title: s.title, real_date: s.real_date, ingame_date: s.ingame_date, summary: s.summary }); setEditId(s.id); setModal('edit'); };
+  const openEdit = (s: Session) => { setForm({ number: s.number, title: s.title, real_date: s.real_date, ingame_date: s.ingame_date, summary: s.summary, doc_url: s.doc_url || '' }); setEditId(s.id); setModal('edit'); };
   const handleSave = async () => {
     if (!form.title.trim()) return;
     if (modal === 'create') await create(form);
@@ -111,9 +93,9 @@ export default function SessionsPage() {
                     {linkNpcs(s.summary, npcs, setViewingNpc)}
                   </p>
                   <div className="flex items-center gap-4 mt-3">
-                    {GDOC_LINKS[s.number] && (
+                    {s.doc_url && (
                       <a
-                        href={GDOC_LINKS[s.number]}
+                        href={s.doc_url}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
@@ -140,6 +122,7 @@ export default function SessionsPage() {
           <Input label="In-Game Date" value={form.ingame_date} onChange={(e) => setForm({ ...form, ingame_date: e.target.value })} placeholder="Fallimall 21–28" />
         </div>
         <Textarea label="Summary" value={form.summary} onChange={(e) => setForm({ ...form, summary: e.target.value })} rows={6} placeholder="What happened this session..." />
+        <Input label="Document URL" value={form.doc_url} onChange={(e) => setForm({ ...form, doc_url: e.target.value })} placeholder="https://docs.google.com/…" />
         <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border-subtle">
           <Button variant="ghost" onClick={() => setModal(null)}>Cancel</Button>
           <Button onClick={handleSave}>{modal === 'create' ? 'Create' : 'Save'}</Button>

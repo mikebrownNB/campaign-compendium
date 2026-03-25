@@ -143,6 +143,7 @@ export interface Session {
   real_date: string;
   ingame_date: string;
   summary: string;
+  doc_url?: string;
   created_at?: string;
   updated_at?: string;
 }
