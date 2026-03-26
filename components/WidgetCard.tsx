@@ -127,6 +127,8 @@ function SpelljammerCard({
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [rolls, setRolls] = useState<Record<string, WeaponRoll>>({});
+  const [hpInput, setHpInput] = useState('');
+  const [hpResult, setHpResult] = useState<string | null>(null);
 
   const handleSave = async () => {
     setSaving(true);
@@ -162,6 +164,35 @@ function SpelljammerCard({
   const damage = (wId: string, notation: string) => {
     const result = rollDamage(notation);
     if (result) setRolls(r => ({ ...r, [wId]: { ...r[wId], damage: result } }));
+  };
+
+  const applyHp = async (mode: 'damage' | 'heal') => {
+    const amount = parseInt(hpInput);
+    if (!amount || amount <= 0) return;
+
+    let newHp: number;
+    let msg: string;
+
+    if (mode === 'heal') {
+      newHp = Math.min(data.maxHp, data.currentHp + amount);
+      const healed = newHp - data.currentHp;
+      msg = healed > 0 ? `+${healed} HP` : 'Already at max HP';
+    } else {
+      if (amount <= data.damageThreshold) {
+        msg = `${amount} ≤ DT ${data.damageThreshold} — no damage`;
+        setHpResult(msg);
+        return;
+      }
+      const effective = amount - data.damageThreshold;
+      newHp = Math.max(0, data.currentHp - effective);
+      msg = `−${effective} HP (${amount} − ${data.damageThreshold} DT)`;
+    }
+
+    const updated = { ...data, currentHp: newHp };
+    setData(updated);
+    setHpInput('');
+    setHpResult(msg);
+    onSave?.(updated);
   };
 
   const hpPct = data.currentHp / Math.max(data.maxHp, 1);
@@ -319,6 +350,39 @@ function SpelljammerCard({
           <div className="flex items-center gap-2 mb-4">
             <span className="font-mono text-[0.55rem] text-text-muted uppercase tracking-wider">Damage Threshold:</span>
             <span className="font-display text-sm font-bold text-accent-gold">{data.damageThreshold}</span>
+          </div>
+
+          {/* HP application */}
+          <div className="bg-deep/40 border border-border-subtle rounded-lg px-3 py-2.5 mb-4">
+            <p className="font-mono text-[0.5rem] text-text-muted uppercase tracking-wider mb-2">Apply Damage / Healing</p>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min="0"
+                value={hpInput}
+                onChange={e => { setHpInput(e.target.value); setHpResult(null); }}
+                onKeyDown={e => { if (e.key === 'Enter') applyHp('damage'); }}
+                placeholder="Amount"
+                className="w-24 bg-deep/60 border border-border-subtle rounded px-2 py-1.5 text-sm text-text-primary focus:outline-none focus:border-accent-gold font-mono text-center"
+              />
+              <button
+                onClick={() => applyHp('damage')}
+                className="font-mono text-[0.65rem] border border-accent-red/40 text-accent-red/80 hover:bg-accent-red/10 rounded px-3 py-1.5 transition-colors"
+              >
+                ⚔ Damage
+              </button>
+              <button
+                onClick={() => applyHp('heal')}
+                className="font-mono text-[0.65rem] border border-green-500/40 text-green-400 hover:bg-green-500/10 rounded px-3 py-1.5 transition-colors"
+              >
+                + Heal
+              </button>
+            </div>
+            {hpResult && (
+              <p className={`mt-1.5 font-mono text-[0.6rem] ${hpResult.includes('no damage') ? 'text-text-muted' : hpResult.startsWith('+') ? 'text-green-400' : 'text-accent-red/80'}`}>
+                {hpResult}
+              </p>
+            )}
           </div>
 
           {data.description && (
