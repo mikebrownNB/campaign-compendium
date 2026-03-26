@@ -1014,7 +1014,7 @@ function WidgetsTab({ campaign }: { campaign: any }) {
       await fetch(`/api/campaigns/${campaign.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: campaign.id, settings: { ...campaign.settings, widgets: updated } }),
+        body: JSON.stringify({ settings: { ...campaign.settings, widgets: updated } }),
       });
       setWidgets(updated);
       router.refresh();

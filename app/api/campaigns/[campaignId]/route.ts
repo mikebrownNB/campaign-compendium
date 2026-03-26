@@ -35,10 +35,12 @@ export async function PUT(
     const supabase = await getSupabaseServer();
     const { campaignId } = params;
     const body = await request.json();
+    // Strip primary key and read-only fields so Supabase doesn't try to SET them
+    const { id: _id, created_at: _ca, ...updateData } = body;
 
     const { data, error } = await supabase
       .from('campaigns')
-      .update(body)
+      .update(updateData)
       .eq('id', campaignId)
       .select()
       .single();

@@ -2,12 +2,14 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useCampaign } from '@/lib/CampaignContext';
 import { WidgetCard } from '@/components/WidgetCard';
 import { Icon } from '@/components/Icon';
 
 export default function CampaignDashboardPage() {
   const { campaign, isDM } = useCampaign();
+  const router = useRouter();
   const base = `/c/${campaign.slug}`;
 
   const SECTIONS = [
@@ -99,10 +101,10 @@ export default function CampaignDashboardPage() {
                   method: 'PUT',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
-                    id: campaign.id,
                     settings: { ...campaign.settings, widgets: newWidgets },
                   }),
                 });
+                router.refresh();
               }}
             />
           ))}
