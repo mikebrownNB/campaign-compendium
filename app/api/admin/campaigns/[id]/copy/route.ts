@@ -116,62 +116,32 @@ export async function POST(
   // ── 6. Everything else in parallel (no cross-refs) ────────────────────────
   const parallelInserts: Promise<void>[] = [];
 
-  if (maps && maps.length > 0) {
-    parallelInserts.push(
-      supabaseAdmin.from('campaign_maps')
-        .insert(maps.map(r => ({ campaign_id: newId, ...strip(r) })))
-        .then(({ error }) => { if (!error) counts.maps = maps.length; }),
-    );
-  }
-  if (npcs && npcs.length > 0) {
-    parallelInserts.push(
-      supabaseAdmin.from('npcs')
-        .insert(npcs.map(r => ({ campaign_id: newId, ...strip(r) })))
-        .then(({ error }) => { if (!error) counts.npcs = npcs.length; }),
-    );
-  }
-  if (factions && factions.length > 0) {
-    parallelInserts.push(
-      supabaseAdmin.from('factions')
-        .insert(factions.map(r => ({ campaign_id: newId, ...strip(r) })))
-        .then(({ error }) => { if (!error) counts.factions = factions.length; }),
-    );
-  }
-  if (lootItems && lootItems.length > 0) {
-    parallelInserts.push(
-      supabaseAdmin.from('loot_items')
-        .insert(lootItems.map(r => ({ campaign_id: newId, ...strip(r) })))
-        .then(({ error }) => { if (!error) counts.loot_items = lootItems.length; }),
-    );
-  }
-  if (sessions && sessions.length > 0) {
-    parallelInserts.push(
-      supabaseAdmin.from('sessions')
-        .insert(sessions.map(r => ({ campaign_id: newId, ...strip(r) })))
-        .then(({ error }) => { if (!error) counts.sessions = sessions.length; }),
-    );
-  }
-  if (threads && threads.length > 0) {
-    parallelInserts.push(
-      supabaseAdmin.from('threads')
-        .insert(threads.map(r => ({ campaign_id: newId, ...strip(r) })))
-        .then(({ error }) => { if (!error) counts.threads = threads.length; }),
-    );
-  }
-  if (calendarEvents && calendarEvents.length > 0) {
-    parallelInserts.push(
-      supabaseAdmin.from('calendar_events')
-        .insert(calendarEvents.map(r => ({ campaign_id: newId, ...strip(r) })))
-        .then(({ error }) => { if (!error) counts.calendar_events = calendarEvents.length; }),
-    );
-  }
-  if (resources && resources.length > 0) {
-    parallelInserts.push(
-      supabaseAdmin.from('resources')
-        .insert(resources.map(r => ({ campaign_id: newId, ...strip(r) })))
-        .then(({ error }) => { if (!error) counts.resources = resources.length; }),
-    );
-  }
+  const addInsert = async (
+    table: string,
+    rows: Record<string, unknown>[],
+    key: string,
+  ) => {
+    const { error } = await (supabaseAdmin.from(table as never) as ReturnType<typeof supabaseAdmin.from>)
+      .insert(rows as never);
+    if (!error) counts[key] = rows.length;
+  };
+
+  if (maps && maps.length > 0)
+    parallelInserts.push(addInsert('campaign_maps', maps.map(r => ({ campaign_id: newId, ...strip(r) })), 'maps'));
+  if (npcs && npcs.length > 0)
+    parallelInserts.push(addInsert('npcs', npcs.map(r => ({ campaign_id: newId, ...strip(r) })), 'npcs'));
+  if (factions && factions.length > 0)
+    parallelInserts.push(addInsert('factions', factions.map(r => ({ campaign_id: newId, ...strip(r) })), 'factions'));
+  if (lootItems && lootItems.length > 0)
+    parallelInserts.push(addInsert('loot_items', lootItems.map(r => ({ campaign_id: newId, ...strip(r) })), 'loot items'));
+  if (sessions && sessions.length > 0)
+    parallelInserts.push(addInsert('sessions', sessions.map(r => ({ campaign_id: newId, ...strip(r) })), 'sessions'));
+  if (threads && threads.length > 0)
+    parallelInserts.push(addInsert('threads', threads.map(r => ({ campaign_id: newId, ...strip(r) })), 'threads'));
+  if (calendarEvents && calendarEvents.length > 0)
+    parallelInserts.push(addInsert('calendar_events', calendarEvents.map(r => ({ campaign_id: newId, ...strip(r) })), 'calendar events'));
+  if (resources && resources.length > 0)
+    parallelInserts.push(addInsert('resources', resources.map(r => ({ campaign_id: newId, ...strip(r) })), 'resources'));
 
   await Promise.all(parallelInserts);
 
