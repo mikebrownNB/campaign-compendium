@@ -88,7 +88,23 @@ export default function CampaignDashboardPage() {
       {widgets.length > 0 && (
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
           {widgets.map(w => (
-            <WidgetCard key={w.id} widget={w} campaignId={campaign.id} isDM={isDM} />
+            <WidgetCard
+              key={w.id}
+              widget={w}
+              campaignId={campaign.id}
+              isDM={isDM}
+              onSave={async (updated) => {
+                const newWidgets = widgets.map(x => x.id === updated.id ? updated : x);
+                await fetch(`/api/campaigns/${campaign.id}`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    id: campaign.id,
+                    settings: { ...campaign.settings, widgets: newWidgets },
+                  }),
+                });
+              }}
+            />
           ))}
         </div>
       )}
