@@ -132,7 +132,9 @@ export default function AdminCampaignsPage() {
       const dmLabel = users.find(u => u.id === copyDmId)?.display_name
         || users.find(u => u.id === copyDmId)?.email
         || 'selected DM';
-      flash(`"${body.name}" created and assigned to ${dmLabel}.`, 'ok');
+      const countSummary = Object.entries(body.counts as Record<string, number>)
+        .map(([k, v]) => `${v} ${k.replace('_', ' ')}`).join(', ');
+      flash(`"${body.name}" created for ${dmLabel}. Copied: ${countSummary || 'settings only'}.`, 'ok');
     } else {
       const body = await res.json();
       flash(body.error ?? 'Failed to copy campaign.', 'err');
