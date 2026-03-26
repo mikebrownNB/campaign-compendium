@@ -838,26 +838,174 @@ function CalendarTab({ campaign }: { campaign: any }) {
 
 // ── Widgets Tab ────────────────────────────────────────────────────────────────
 type WidgetFormWeapon = { id: string; name: string; hitModifier: string; damage: string };
+type WidgetForm = {
+  type: 'stat-tracker' | 'spelljammer';
+  name: string;
+  fields: string;
+  currentHp: string;
+  maxHp: string;
+  ac: string;
+  speed: string;
+  damageThreshold: string;
+  description: string;
+  weapons: WidgetFormWeapon[];
+};
 
-const EMPTY_FORM = {
-  type: 'spelljammer' as 'stat-tracker' | 'spelljammer',
+const EMPTY_FORM: WidgetForm = {
+  type: 'spelljammer',
   name: '',
-  // stat-tracker
   fields: '',
-  // spelljammer
+  currentHp: '100',
   maxHp: '100',
   ac: '15',
   speed: '35',
   damageThreshold: '0',
   description: '',
-  weapons: [] as WidgetFormWeapon[],
+  weapons: [],
 };
+
+function widgetToForm(w: WidgetConfig): WidgetForm {
+  if (w.type === 'stat-tracker') {
+    return { ...EMPTY_FORM, type: 'stat-tracker', name: w.name, fields: w.fields.map(f => f.label).join(', ') };
+  }
+  return {
+    ...EMPTY_FORM,
+    type: 'spelljammer',
+    name: w.name,
+    currentHp: String(w.currentHp),
+    maxHp: String(w.maxHp),
+    ac: String(w.ac),
+    speed: String(w.speed),
+    damageThreshold: String(w.damageThreshold),
+    description: w.description ?? '',
+    weapons: w.weapons.map(ww => ({ id: ww.id, name: ww.name, hitModifier: String(ww.hitModifier), damage: ww.damage })),
+  };
+}
+
+function formToWidget(form: WidgetForm, id: string, existing?: WidgetConfig): WidgetConfig {
+  if (form.type === 'stat-tracker') {
+    const newLabels = form.fields.split(',').map(f => f.trim()).filter(Boolean);
+    const valueMap = Object.fromEntries(
+      (existing?.type === 'stat-tracker' ? existing.fields : []).map(f => [f.label, f.value])
+    );
+    return {
+      id, type: 'stat-tracker',
+      name: form.name.trim() || 'Widget',
+      fields: newLabels.map(label => ({ label, value: valueMap[label] ?? '0' })),
+    };
+  }
+  return {
+    id, type: 'spelljammer',
+    name: form.name.trim() || 'Ship',
+    currentHp: parseInt(form.currentHp) || parseInt(form.maxHp) || 100,
+    maxHp: parseInt(form.maxHp) || 100,
+    ac: parseInt(form.ac) || 15,
+    speed: parseInt(form.speed) || 35,
+    damageThreshold: parseInt(form.damageThreshold) || 0,
+    description: form.description.trim(),
+    weapons: form.weapons
+      .filter(w => w.name.trim())
+      .map(w => ({ id: w.id, name: w.name.trim(), hitModifier: parseInt(w.hitModifier) || 0, damage: w.damage.trim() || '1d6' })) as SpelljammerWeapon[],
+  };
+}
+
+// Shared form fields used by both add and edit panels
+function WidgetFormFields({
+  form,
+  setForm,
+}: {
+  form: WidgetForm;
+  setForm: (v: WidgetForm | ((p: WidgetForm) => WidgetForm)) => void;
+}) {
+  const addWeapon = () =>
+    setForm(f => ({ ...f, weapons: [...f.weapons, { id: crypto.randomUUID(), name: '', hitModifier: '0', damage: '1d6' }] }));
+  const updateWeapon = (id: string, ch: Partial<WidgetFormWeapon>) =>
+    setForm(f => ({ ...f, weapons: f.weapons.map(w => w.id === id ? { ...w, ...ch } : w) }));
+  const removeWeapon = (id: string) =>
+    setForm(f => ({ ...f, weapons: f.weapons.filter(w => w.id !== id) }));
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <p className="font-mono text-[0.55rem] text-text-muted uppercase tracking-wider mb-2">Widget Type</p>
+        <div className="flex gap-2">
+          {(['stat-tracker', 'spelljammer'] as const).map(t => (
+            <button key={t} onClick={() => setForm(f => ({ ...f, type: t }))}
+              className={`font-mono text-[0.65rem] border rounded px-3 py-1.5 transition-colors ${
+                form.type === t ? 'bg-accent-gold/10 border-accent-gold/50 text-accent-gold' : 'border-border-subtle text-text-muted hover:text-text-primary'
+              }`}>
+              {t === 'stat-tracker' ? 'Stat Tracker' : '⚓ Spelljammer Ship'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <Input label="Name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+        placeholder={form.type === 'spelljammer' ? 'e.g. Heart of Stars' : 'e.g. Party Stats'} />
+
+      {form.type === 'stat-tracker' ? (
+        <>
+          <Input label="Stat Fields (comma separated)" value={form.fields}
+            onChange={e => setForm(f => ({ ...f, fields: e.target.value }))} placeholder="HP, AC, Speed, Damage" />
+          <p className="font-mono text-[0.55rem] text-text-muted">Creates a widget with editable stat values on the dashboard.</p>
+        </>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-3">
+            <Input label="Current HP" value={form.currentHp} onChange={e => setForm(f => ({ ...f, currentHp: e.target.value }))} placeholder="100" />
+            <Input label="Max HP" value={form.maxHp} onChange={e => setForm(f => ({ ...f, maxHp: e.target.value }))} placeholder="100" />
+            <Input label="AC" value={form.ac} onChange={e => setForm(f => ({ ...f, ac: e.target.value }))} placeholder="15" />
+            <Input label="Speed" value={form.speed} onChange={e => setForm(f => ({ ...f, speed: e.target.value }))} placeholder="35" />
+            <div className="col-span-2">
+              <Input label="Damage Threshold" value={form.damageThreshold}
+                onChange={e => setForm(f => ({ ...f, damageThreshold: e.target.value }))} placeholder="0" />
+            </div>
+          </div>
+          <Input label="Description (optional)" value={form.description}
+            onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="A mighty vessel of the astral sea…" />
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <p className="font-mono text-[0.55rem] text-text-muted uppercase tracking-wider">Weapons</p>
+              <button onClick={addWeapon} className="font-mono text-[0.6rem] text-accent-gold hover:text-accent-gold/70 transition-colors">
+                + Add Weapon
+              </button>
+            </div>
+            {form.weapons.length > 0 && (
+              <div className="grid grid-cols-[1fr_64px_80px_24px] gap-1 mb-1">
+                {['Name', 'Hit Mod', 'Damage', ''].map((h, i) => (
+                  <span key={i} className="font-mono text-[0.48rem] text-text-muted uppercase px-1">{h}</span>
+                ))}
+              </div>
+            )}
+            <div className="space-y-1.5">
+              {form.weapons.map(w => (
+                <div key={w.id} className="grid grid-cols-[1fr_64px_80px_24px] gap-1 items-center">
+                  <input value={w.name} onChange={e => updateWeapon(w.id, { name: e.target.value })}
+                    placeholder="Ballista" className="bg-deep/70 border border-border-subtle rounded px-2 py-1 text-xs text-text-primary focus:outline-none focus:border-accent-gold" />
+                  <input type="number" value={w.hitModifier} onChange={e => updateWeapon(w.id, { hitModifier: e.target.value })}
+                    className="bg-deep/70 border border-border-subtle rounded px-2 py-1 text-xs text-text-primary focus:outline-none focus:border-accent-gold text-center" />
+                  <input value={w.damage} onChange={e => updateWeapon(w.id, { damage: e.target.value })}
+                    placeholder="3d10" className="bg-deep/70 border border-border-subtle rounded px-2 py-1 text-xs text-text-primary focus:outline-none focus:border-accent-gold text-center" />
+                  <button onClick={() => removeWeapon(w.id)}
+                    className="text-text-muted hover:text-accent-red font-mono text-base leading-none transition-colors">×</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 function WidgetsTab({ campaign }: { campaign: any }) {
   const router = useRouter();
   const [widgets, setWidgets] = useState<WidgetConfig[]>(campaign.settings?.widgets ?? []);
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState(EMPTY_FORM);
+  const [form, setForm] = useState<WidgetForm>(EMPTY_FORM);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<WidgetForm>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
 
   const save = async (updated: WidgetConfig[]) => {
@@ -866,10 +1014,7 @@ function WidgetsTab({ campaign }: { campaign: any }) {
       await fetch(`/api/campaigns/${campaign.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: campaign.id,
-          settings: { ...campaign.settings, widgets: updated },
-        }),
+        body: JSON.stringify({ id: campaign.id, settings: { ...campaign.settings, widgets: updated } }),
       });
       setWidgets(updated);
       router.refresh();
@@ -880,172 +1025,42 @@ function WidgetsTab({ campaign }: { campaign: any }) {
 
   const handleAdd = async () => {
     if (!form.name.trim()) return;
-    let newWidget: WidgetConfig;
-
-    if (form.type === 'stat-tracker') {
-      const fieldPairs = form.fields.split(',').map(f => f.trim()).filter(Boolean);
-      newWidget = {
-        id: crypto.randomUUID(),
-        type: 'stat-tracker',
-        name: form.name.trim(),
-        fields: fieldPairs.map(f => ({ label: f, value: '0' })),
-      };
-    } else {
-      newWidget = {
-        id: crypto.randomUUID(),
-        type: 'spelljammer',
-        name: form.name.trim(),
-        currentHp: parseInt(form.maxHp) || 100,
-        maxHp: parseInt(form.maxHp) || 100,
-        ac: parseInt(form.ac) || 15,
-        speed: parseInt(form.speed) || 35,
-        damageThreshold: parseInt(form.damageThreshold) || 0,
-        description: form.description.trim(),
-        weapons: form.weapons
-          .filter(w => w.name.trim())
-          .map(w => ({
-            id: w.id,
-            name: w.name.trim(),
-            hitModifier: parseInt(w.hitModifier) || 0,
-            damage: w.damage.trim() || '1d6',
-          })) as SpelljammerWeapon[],
-      };
-    }
-
-    await save([...widgets, newWidget]);
+    await save([...widgets, formToWidget(form, crypto.randomUUID())]);
     setForm(EMPTY_FORM);
     setShowAdd(false);
   };
 
+  const handleSaveEdit = async () => {
+    if (!editingId) return;
+    const existing = widgets.find(w => w.id === editingId);
+    await save(widgets.map(w => w.id === editingId ? formToWidget(editForm, editingId, existing) : w));
+    setEditingId(null);
+  };
+
   const handleRemove = async (id: string) => {
+    if (editingId === id) setEditingId(null);
     await save(widgets.filter(w => w.id !== id));
   };
 
-  const addFormWeapon = () =>
-    setForm(f => ({ ...f, weapons: [...f.weapons, { id: crypto.randomUUID(), name: '', hitModifier: '0', damage: '1d6' }] }));
-
-  const updateFormWeapon = (id: string, ch: Partial<WidgetFormWeapon>) =>
-    setForm(f => ({ ...f, weapons: f.weapons.map(w => w.id === id ? { ...w, ...ch } : w) }));
-
-  const removeFormWeapon = (id: string) =>
-    setForm(f => ({ ...f, weapons: f.weapons.filter(w => w.id !== id) }));
+  const startEdit = (w: WidgetConfig) => {
+    setEditingId(w.id);
+    setEditForm(widgetToForm(w));
+    setShowAdd(false);
+  };
 
   return (
     <div className="bg-card border border-border-subtle rounded-lg p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-display text-sm text-accent-gold tracking-wider">Dashboard Widgets</h3>
-        <Button size="sm" onClick={() => { setShowAdd(!showAdd); setForm(EMPTY_FORM); }}>+ Add Widget</Button>
+        <Button size="sm" onClick={() => { setShowAdd(s => !s); setForm(EMPTY_FORM); setEditingId(null); }}>
+          + Add Widget
+        </Button>
       </div>
 
       {showAdd && (
-        <div className="bg-deep/50 rounded-lg p-4 mb-4 space-y-3">
-          {/* Type selector */}
-          <div>
-            <p className="font-mono text-[0.55rem] text-text-muted uppercase tracking-wider mb-2">Widget Type</p>
-            <div className="flex gap-2">
-              {(['stat-tracker', 'spelljammer'] as const).map(t => (
-                <button
-                  key={t}
-                  onClick={() => setForm(f => ({ ...f, type: t }))}
-                  className={`font-mono text-[0.65rem] border rounded px-3 py-1.5 transition-colors ${
-                    form.type === t
-                      ? 'bg-accent-gold/10 border-accent-gold/50 text-accent-gold'
-                      : 'border-border-subtle text-text-muted hover:text-text-primary'
-                  }`}
-                >
-                  {t === 'stat-tracker' ? 'Stat Tracker' : '⚓ Spelljammer Ship'}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <Input
-            label="Name"
-            value={form.name}
-            onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-            placeholder={form.type === 'spelljammer' ? 'e.g. Heart of Stars' : 'e.g. Party Stats'}
-          />
-
-          {form.type === 'stat-tracker' ? (
-            <>
-              <Input
-                label="Stat Fields (comma separated)"
-                value={form.fields}
-                onChange={e => setForm(f => ({ ...f, fields: e.target.value }))}
-                placeholder="HP, AC, Speed, Damage"
-              />
-              <p className="font-mono text-[0.55rem] text-text-muted">
-                Creates a widget with editable stat values on the dashboard.
-              </p>
-            </>
-          ) : (
-            <>
-              <div className="grid grid-cols-2 gap-3">
-                <Input label="Max HP" value={form.maxHp} onChange={e => setForm(f => ({ ...f, maxHp: e.target.value }))} placeholder="100" />
-                <Input label="AC" value={form.ac} onChange={e => setForm(f => ({ ...f, ac: e.target.value }))} placeholder="15" />
-                <Input label="Speed" value={form.speed} onChange={e => setForm(f => ({ ...f, speed: e.target.value }))} placeholder="35" />
-                <Input label="Damage Threshold" value={form.damageThreshold} onChange={e => setForm(f => ({ ...f, damageThreshold: e.target.value }))} placeholder="0" />
-              </div>
-              <Input
-                label="Description (optional)"
-                value={form.description}
-                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                placeholder="A mighty vessel of the astral sea…"
-              />
-
-              {/* Weapons */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <p className="font-mono text-[0.55rem] text-text-muted uppercase tracking-wider">Weapons</p>
-                  <button
-                    onClick={addFormWeapon}
-                    className="font-mono text-[0.6rem] text-accent-gold hover:text-accent-gold/70 transition-colors"
-                  >
-                    + Add Weapon
-                  </button>
-                </div>
-                {form.weapons.length > 0 && (
-                  <div className="grid grid-cols-[1fr_64px_80px_24px] gap-1 mb-1">
-                    {['Name', 'Hit Mod', 'Damage', ''].map((h, i) => (
-                      <span key={i} className="font-mono text-[0.48rem] text-text-muted uppercase px-1">{h}</span>
-                    ))}
-                  </div>
-                )}
-                <div className="space-y-1.5">
-                  {form.weapons.map(w => (
-                    <div key={w.id} className="grid grid-cols-[1fr_64px_80px_24px] gap-1 items-center">
-                      <input
-                        value={w.name}
-                        onChange={e => updateFormWeapon(w.id, { name: e.target.value })}
-                        placeholder="Ballista"
-                        className="bg-deep/70 border border-border-subtle rounded px-2 py-1 text-xs text-text-primary focus:outline-none focus:border-accent-gold"
-                      />
-                      <input
-                        type="number"
-                        value={w.hitModifier}
-                        onChange={e => updateFormWeapon(w.id, { hitModifier: e.target.value })}
-                        className="bg-deep/70 border border-border-subtle rounded px-2 py-1 text-xs text-text-primary focus:outline-none focus:border-accent-gold text-center"
-                      />
-                      <input
-                        value={w.damage}
-                        onChange={e => updateFormWeapon(w.id, { damage: e.target.value })}
-                        placeholder="3d10"
-                        className="bg-deep/70 border border-border-subtle rounded px-2 py-1 text-xs text-text-primary focus:outline-none focus:border-accent-gold text-center"
-                      />
-                      <button
-                        onClick={() => removeFormWeapon(w.id)}
-                        className="text-text-muted hover:text-accent-red font-mono text-base leading-none transition-colors"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-
-          <div className="flex gap-2 pt-1">
+        <div className="bg-deep/50 rounded-lg p-4 mb-4">
+          <WidgetFormFields form={form} setForm={setForm} />
+          <div className="flex gap-2 pt-3 mt-3 border-t border-border-subtle">
             <Button size="sm" onClick={handleAdd} disabled={saving}>{saving ? '...' : 'Add Widget'}</Button>
             <Button size="sm" variant="ghost" onClick={() => setShowAdd(false)}>Cancel</Button>
           </div>
@@ -1056,22 +1071,39 @@ function WidgetsTab({ campaign }: { campaign: any }) {
         {widgets.length === 0 ? (
           <p className="text-text-muted text-sm">No widgets configured.</p>
         ) : widgets.map(w => (
-          <div key={w.id} className="flex items-center justify-between bg-deep/30 rounded-lg px-4 py-3">
-            <div>
-              <span className="font-display text-sm text-text-primary">{w.name}</span>
-              <span className="ml-2 font-mono text-[0.55rem] text-text-muted">
-                {w.type === 'stat-tracker'
-                  ? `stat-tracker — ${w.fields.map(f => f.label).join(', ')}`
-                  : `spelljammer — ${w.maxHp} HP, AC ${w.ac}, ${w.weapons.length} weapon${w.weapons.length !== 1 ? 's' : ''}`
-                }
-              </span>
+          <div key={w.id} className="bg-deep/30 rounded-lg overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3">
+              <div>
+                <span className="font-display text-sm text-text-primary">{w.name}</span>
+                <span className="ml-2 font-mono text-[0.55rem] text-text-muted">
+                  {w.type === 'stat-tracker'
+                    ? `stat-tracker — ${w.fields.map(f => f.label).join(', ')}`
+                    : `spelljammer — ${w.maxHp} HP, AC ${w.ac}, ${w.weapons.length} weapon${w.weapons.length !== 1 ? 's' : ''}`}
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => editingId === w.id ? setEditingId(null) : startEdit(w)}
+                  className={`font-mono text-[0.6rem] transition-colors ${editingId === w.id ? 'text-accent-gold' : 'text-text-muted hover:text-accent-gold'}`}
+                >
+                  {editingId === w.id ? 'Cancel' : 'Edit'}
+                </button>
+                <button onClick={() => handleRemove(w.id)}
+                  className="font-mono text-[0.6rem] text-text-muted hover:text-accent-red transition-colors">
+                  Remove
+                </button>
+              </div>
             </div>
-            <button
-              onClick={() => handleRemove(w.id)}
-              className="font-mono text-[0.6rem] text-text-muted hover:text-accent-red transition-colors"
-            >
-              Remove
-            </button>
+
+            {editingId === w.id && (
+              <div className="border-t border-border-subtle px-4 py-4 bg-deep/20">
+                <WidgetFormFields form={editForm} setForm={setEditForm} />
+                <div className="flex gap-2 pt-3 mt-3 border-t border-border-subtle">
+                  <Button size="sm" onClick={handleSaveEdit} disabled={saving}>{saving ? '...' : 'Save Changes'}</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>Cancel</Button>
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
