@@ -42,12 +42,14 @@ export default function AdminCampaignsPage() {
   const [loading,      setLoading]      = useState(true);
   const [allowed,      setAllowed]      = useState(false);
   const [selected,     setSelected]     = useState<AdminCampaign | null>(null);
-  const [modal,        setModal]        = useState<'delete' | 'reassign' | null>(null);
+  const [modal,        setModal]        = useState<'delete' | 'reassign' | 'copy' | null>(null);
   const [error,        setError]        = useState<string | null>(null);
   const [success,      setSuccess]      = useState<string | null>(null);
   const [users,        setUsers]        = useState<AdminUser[]>([]);
   const [newOwnerId,   setNewOwnerId]   = useState<string>('');
   const [saving,       setSaving]       = useState(false);
+  const [copyName,     setCopyName]     = useState('');
+  const [copyDmId,     setCopyDmId]     = useState('');
   const [migrating,    setMigrating]    = useState(false);
   const [migrateResult, setMigrateResult] = useState<{ counts: Record<string, number> } | null>(null);
 
@@ -101,6 +103,40 @@ export default function AdminCampaignsPage() {
       if (res.ok) setUsers(await res.json());
     }
     setModal('reassign');
+  };
+
+  const openCopy = async (c: AdminCampaign) => {
+    setSelected(c);
+    setCopyName(`Copy of ${c.name}`);
+    setCopyDmId('');
+    if (users.length === 0) {
+      const res = await fetch('/api/admin/users');
+      if (res.ok) setUsers(await res.json());
+    }
+    setModal('copy');
+  };
+
+  const handleCopy = async () => {
+    if (!selected) return;
+    setSaving(true);
+    const res = await fetch(`/api/admin/campaigns/${selected.id}/copy`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ name: copyName, dm_user_id: copyDmId }),
+    });
+    setSaving(false);
+    if (res.ok) {
+      const body = await res.json();
+      setModal(null);
+      await loadCampaigns();
+      const dmLabel = users.find(u => u.id === copyDmId)?.display_name
+        || users.find(u => u.id === copyDmId)?.email
+        || 'selected DM';
+      flash(`"${body.name}" created and assigned to ${dmLabel}.`, 'ok');
+    } else {
+      const body = await res.json();
+      flash(body.error ?? 'Failed to copy campaign.', 'err');
+    }
   };
 
   const handleReassign = async () => {
@@ -276,6 +312,12 @@ export default function AdminCampaignsPage() {
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-3">
                       <button
+                        onClick={() => openCopy(c)}
+                        className="font-mono text-[0.65rem] text-text-muted hover:text-accent-purple transition-colors"
+                      >
+                        Copy
+                      </button>
+                      <button
                         onClick={() => openReassign(c)}
                         className="font-mono text-[0.65rem] text-text-muted hover:text-accent-gold transition-colors"
                       >
@@ -360,6 +402,51 @@ export default function AdminCampaignsPage() {
           </div>
         )}
       </SlideOut>
+
+      {/* Copy campaign modal */}
+      <Modal open={modal === 'copy'} onClose={() => setModal(null)} title="Copy Campaign">
+        <p className="text-sm text-text-secondary mb-4">
+          Create a copy of{' '}
+          <span className="text-text-primary font-mono">{selected?.name}</span>.
+          The campaign settings and widgets will be copied. Members are not copied.
+        </p>
+        <div className="space-y-3">
+          <div>
+            <label className="font-mono text-[0.6rem] text-text-muted uppercase tracking-wider block mb-1">
+              New Campaign Name
+            </label>
+            <input
+              type="text"
+              value={copyName}
+              onChange={e => setCopyName(e.target.value)}
+              className="w-full bg-deep border border-border-subtle rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent-gold"
+            />
+          </div>
+          <Select
+            label="Assign DM"
+            value={copyDmId}
+            onChange={e => setCopyDmId(e.target.value)}
+            options={[
+              { value: '', label: '— Select a DM —' },
+              ...users.map(u => ({
+                value: u.id,
+                label: u.display_name ? `${u.display_name} (${u.email})` : u.email,
+              })),
+            ]}
+          />
+        </div>
+        {error && (
+          <p className="mt-3 font-mono text-[0.65rem] text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-3 py-2">
+            <Icon name="close" className="text-sm align-middle" /> {error}
+          </p>
+        )}
+        <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border-subtle">
+          <Button variant="ghost" onClick={() => setModal(null)}>Cancel</Button>
+          <Button onClick={handleCopy} disabled={saving || !copyName.trim() || !copyDmId}>
+            {saving ? 'Copying…' : 'Copy Campaign'}
+          </Button>
+        </div>
+      </Modal>
 
       {/* Reassign owner modal */}
       <Modal open={modal === 'reassign'} onClose={() => setModal(null)} title="Change Campaign Owner">
