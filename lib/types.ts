@@ -24,12 +24,34 @@ export interface CalendarConfig {
   weekdays: string[];
 }
 
-export interface WidgetConfig {
+export interface StatTrackerWidgetConfig {
   id: string;
   type: 'stat-tracker';
   name: string;
   fields: { label: string; value: string }[];
 }
+
+export interface SpelljammerWeapon {
+  id: string;
+  name: string;
+  hitModifier: number;   // e.g. 5 means +5
+  damage: string;        // e.g. "3d10" or "2d6+4"
+}
+
+export interface SpelljammerWidgetConfig {
+  id: string;
+  type: 'spelljammer';
+  name: string;
+  currentHp: number;
+  maxHp: number;
+  ac: number;
+  speed: number;
+  damageThreshold: number;
+  description?: string;
+  weapons: SpelljammerWeapon[];
+}
+
+export type WidgetConfig = StatTrackerWidgetConfig | SpelljammerWidgetConfig;
 
 export interface CampaignMember {
   id: string;
