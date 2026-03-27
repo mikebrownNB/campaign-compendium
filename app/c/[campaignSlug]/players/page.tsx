@@ -12,6 +12,7 @@ interface Player {
   id: string;
   name: string;
   dndbeyond_url: string;
+  ac?: number | null;
   campaign_id: string;
   created_at: string;
 }
@@ -38,12 +39,31 @@ function formatClasses(classes: { name: string; level: number }[]): string {
 
 export default function PlayersPage() {
   const { isDM } = useCampaign();
-  const { items: players, create, remove, loading } = useCampaignCrud<Player>('players');
+  const { items: players, create, update, remove, loading } = useCampaignCrud<Player>('players');
   const [selected, setSelected] = useState<Player | null>(null);
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // AC inline editing in slideout header
+  const [acEditing, setAcEditing] = useState(false);
+  const [acValue, setAcValue] = useState('');
+
+  const openSlideOut = (char: Player) => {
+    setSelected(char);
+    setAcValue(char.ac != null ? String(char.ac) : '');
+    setAcEditing(false);
+  };
+
+  const saveAc = async () => {
+    if (!selected) return;
+    const parsed = parseInt(acValue, 10);
+    const newAc = isNaN(parsed) ? null : parsed;
+    const updated = await update({ id: selected.id, ac: newAc });
+    if (updated) setSelected(updated);
+    setAcEditing(false);
+  };
 
   // Avatar / character data keyed by player.id
   const [charData, setCharData] = useState<Record<string, DndCharacterData | null>>({});
@@ -119,7 +139,7 @@ export default function PlayersPage() {
             return (
               <div key={char.id} className="group relative">
                 <button
-                  onClick={() => char.dndbeyond_url ? setSelected(char) : undefined}
+                  onClick={() => char.dndbeyond_url ? openSlideOut(char) : undefined}
                   className="w-full text-left"
                   disabled={!char.dndbeyond_url}
                 >
@@ -159,6 +179,13 @@ export default function PlayersPage() {
                         {classLine && (
                           <span className="font-mono text-[0.6rem] text-accent-purple/70">{classLine}</span>
                         )}
+                      </div>
+                    )}
+
+                    {char.ac != null && (
+                      <div className="flex items-center gap-1 mb-1">
+                        <Icon name="shield" className="text-xs text-accent-gold/70" />
+                        <span className="font-mono text-[0.6rem] text-accent-gold/70">AC {char.ac}</span>
                       </div>
                     )}
 
@@ -229,15 +256,47 @@ export default function PlayersPage() {
               : 'D&D Beyond Character Sheet'
           }
           headerExtra={
-            <a
-              href={selected.dndbeyond_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-mono text-xs text-accent-gold border border-accent-gold/30 rounded px-2 py-1
-                         hover:bg-accent-gold/10 transition-colors whitespace-nowrap"
-            >
-              Open ↗
-            </a>
+            <div className="flex items-center gap-2">
+              {/* AC stat — click to edit (DM only) */}
+              {acEditing && isDM ? (
+                <div className="flex items-center gap-1">
+                  <Icon name="shield" className="text-sm text-accent-gold/80" />
+                  <input
+                    type="number"
+                    value={acValue}
+                    onChange={e => setAcValue(e.target.value)}
+                    onBlur={saveAc}
+                    onKeyDown={e => { if (e.key === 'Enter') saveAc(); if (e.key === 'Escape') setAcEditing(false); }}
+                    className="w-12 bg-surface border border-accent-gold/40 rounded px-1.5 py-0.5 font-mono text-xs text-accent-gold text-center focus:outline-none focus:border-accent-gold"
+                    autoFocus
+                    min={0}
+                    max={99}
+                  />
+                </div>
+              ) : (
+                <button
+                  onClick={() => isDM && setAcEditing(true)}
+                  title={isDM ? 'Click to edit AC' : undefined}
+                  className={`flex items-center gap-1 font-mono text-xs border rounded px-2 py-1 transition-colors
+                    ${selected.ac != null
+                      ? 'text-accent-gold border-accent-gold/30 bg-accent-gold/5 hover:bg-accent-gold/10'
+                      : 'text-text-muted border-border-subtle hover:border-accent-gold/30'
+                    } ${isDM ? 'cursor-pointer' : 'cursor-default pointer-events-none'}`}
+                >
+                  <Icon name="shield" className="text-sm" />
+                  {selected.ac != null ? `AC ${selected.ac}` : 'AC —'}
+                </button>
+              )}
+              <a
+                href={selected.dndbeyond_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-mono text-xs text-accent-gold border border-accent-gold/30 rounded px-2 py-1
+                           hover:bg-accent-gold/10 transition-colors whitespace-nowrap"
+              >
+                Open ↗
+              </a>
+            </div>
           }
         >
           <div className="w-full" style={{ height: 'calc(100vh - 140px)' }}>
