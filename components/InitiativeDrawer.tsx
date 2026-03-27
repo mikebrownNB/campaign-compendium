@@ -31,6 +31,7 @@ export function InitiativeDrawer() {
   const [addAc, setAddAc] = useState('');
 
   const [saving, setSaving] = useState(false);
+  const [loadingPlayers, setLoadingPlayers] = useState(false);
   const suppressRef = useRef(false);
 
   // ── Draggable panel position ───────────────────────────────────────────
@@ -203,6 +204,31 @@ export function InitiativeDrawer() {
     persist([], 1, 0, visibleToPlayers);
   };
 
+  const addAllPlayers = async () => {
+    setLoadingPlayers(true);
+    try {
+      const res = await fetch(`/api/campaigns/${campaignId}/players`);
+      if (!res.ok) return;
+      const players: { id: string; name: string }[] = await res.json();
+      const existingNames = new Set(entries.filter(e => e.type === 'player').map(e => e.name));
+      const newEntries: InitiativeEntry[] = players
+        .filter(p => !existingNames.has(p.name))
+        .map(p => ({
+          id: crypto.randomUUID(),
+          name: p.name,
+          initiative: 0,
+          type: 'player' as const,
+        }));
+      if (newEntries.length > 0) {
+        const next = sorted([...entries, ...newEntries]);
+        setEntries(next);
+        persist(next, round, activeIndex, visibleToPlayers);
+      }
+    } finally {
+      setLoadingPlayers(false);
+    }
+  };
+
   const toggleVisible = () => {
     const next = !visibleToPlayers;
     setVisibleToPlayers(next);
@@ -354,6 +380,15 @@ export function InitiativeDrawer() {
                            disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                 >Add</button>
               </div>
+              <button
+                onClick={addAllPlayers}
+                disabled={loadingPlayers}
+                className="w-full py-1.5 rounded-lg border border-border-subtle font-mono text-[0.6rem] text-text-muted
+                         hover:text-accent-purple hover:border-accent-purple/30 transition-colors
+                         disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Icon name="group_add" className="text-sm align-middle" /> {loadingPlayers ? 'Loading...' : 'Add All Players'}
+              </button>
             </div>
           )}
 
