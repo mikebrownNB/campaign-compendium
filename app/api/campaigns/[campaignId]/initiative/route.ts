@@ -51,17 +51,13 @@ export async function GET(
   // DMs see everything
   if (isDM) return NextResponse.json(data);
 
-  // Players: if not visible, return hidden state
-  if (!data.visible_to_players) {
-    return NextResponse.json({ ...data, entries: [], hidden: true });
-  }
-
-  // Players: strip monster entries and sensitive fields
-  const entries = (data.entries as InitiativeEntry[])
-    .filter(e => e.type === 'player')
+  // Players: tracker is always visible; visible_to_players controls whether monsters show
+  const allEntries = data.entries as InitiativeEntry[];
+  const playerEntries = allEntries
+    .filter(e => data.visible_to_players || e.type === 'player')
     .map(({ hp, maxHp, ac, notes, ...rest }) => rest);
 
-  return NextResponse.json({ ...data, entries });
+  return NextResponse.json({ ...data, entries: playerEntries });
 }
 
 // PUT /api/campaigns/[campaignId]/initiative — DM only, upsert

@@ -21,7 +21,6 @@ export function InitiativeDrawer() {
   const [round, setRound] = useState(1);
   const [activeIndex, setActiveIndex] = useState(0);
   const [visibleToPlayers, setVisibleToPlayers] = useState(false);
-  const [hidden, setHidden] = useState(false); // player view: DM hasn't shared
 
   // Add form state
   const [addName, setAddName] = useState('');
@@ -91,7 +90,6 @@ export function InitiativeDrawer() {
     setRound(data.round ?? 1);
     setActiveIndex(data.active_index ?? 0);
     setVisibleToPlayers(data.visible_to_players ?? false);
-    setHidden(!!data.hidden);
   }, [campaignId]);
 
   useEffect(() => { fetchState(); }, [fetchState]);
@@ -268,8 +266,7 @@ export function InitiativeDrawer() {
     persist(entries, round, activeIndex, next);
   };
 
-  // ── Player: hide button entirely when DM hasn't shared ──────────────────
-  if (!isDM && (hidden || !visibleToPlayers)) return null;
+  // ── Player: tracker is always visible; monsters shown based on DM toggle ─
 
   const sortedEntries = sorted(entries);
 
@@ -338,7 +335,7 @@ export function InitiativeDrawer() {
               <div className="flex items-center gap-2">
                 <Icon name={visibleToPlayers ? 'visibility' : 'visibility_off'} className="text-sm text-accent-purple" />
                 <span className="font-mono text-xs text-text-primary">
-                  {visibleToPlayers ? 'Visible to players' : 'DM only'}
+                  {visibleToPlayers ? 'Monsters visible to players' : 'Monsters hidden from players'}
                 </span>
               </div>
               <button
