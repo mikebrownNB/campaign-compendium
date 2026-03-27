@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import { CampaignProvider } from '@/lib/CampaignContext';
 import { NavSidebar } from '@/components/NavSidebar';
+import { InitiativeDrawer } from '@/components/InitiativeDrawer';
 import type { Campaign, CampaignMember, CampaignMap } from '@/lib/types';
 
 function DynamicFavicon({ url }: { url?: string }) {
@@ -38,6 +39,7 @@ export function CampaignShell({
       <DynamicFavicon url={campaign.settings?.favicon_url} />
       <div className="flex min-h-screen">
         <NavSidebar />
+        <InitiativeDrawer />
         <main className="flex-1 ml-0 md:ml-56 min-h-screen">
           <div className="max-w-6xl mx-auto px-4 md:px-8 py-8">
             {children}

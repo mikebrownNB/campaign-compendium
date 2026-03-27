@@ -233,6 +233,27 @@ export interface NoteUser {
   display_name: string;
 }
 
+// ===== Initiative Tracker Types =====
+export interface InitiativeEntry {
+  id: string;
+  name: string;
+  initiative: number;
+  type: 'player' | 'monster';
+  hp?: number;
+  maxHp?: number;
+  ac?: number;
+  notes?: string;
+}
+
+export interface InitiativeState {
+  id: string;
+  campaign_id: string;
+  entries: InitiativeEntry[];
+  round: number;
+  active_index: number;
+  visible_to_players: boolean;
+}
+
 // ===== Calendar helpers =====
 // Default calendar (standard 12-month)
 export const DEFAULT_CALENDAR: CalendarConfig = {
