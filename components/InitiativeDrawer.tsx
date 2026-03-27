@@ -32,6 +32,10 @@ export function InitiativeDrawer() {
 
   const [saving, setSaving] = useState(false);
   const [loadingPlayers, setLoadingPlayers] = useState(false);
+
+  // Per-entry HP input/result state for damage/heal controls
+  const [hpInputs, setHpInputs] = useState<Record<string, string>>({});
+  const [hpResults, setHpResults] = useState<Record<string, string>>({});
   const suppressRef = useRef(false);
 
   // ── Draggable panel position ───────────────────────────────────────────
@@ -175,11 +179,25 @@ export function InitiativeDrawer() {
     persist(next, round, Math.max(0, newIdx), visibleToPlayers);
   };
 
-  const updateHp = (id: string, delta: number) => {
-    const next = entries.map(e =>
-      e.id === id ? { ...e, hp: Math.max(0, (e.hp ?? 0) + delta) } : e,
-    );
+  const applyHp = (id: string, mode: 'damage' | 'heal') => {
+    const amount = parseInt(hpInputs[id] ?? '');
+    if (!amount || amount <= 0) return;
+    const entry = entries.find(e => e.id === id);
+    if (!entry || entry.hp === undefined) return;
+    let newHp: number;
+    let msg: string;
+    if (mode === 'heal') {
+      newHp = entry.maxHp != null ? Math.min(entry.maxHp, entry.hp + amount) : entry.hp + amount;
+      const actual = newHp - entry.hp;
+      msg = actual > 0 ? `+${actual} HP` : 'Already at max';
+    } else {
+      newHp = Math.max(0, entry.hp - amount);
+      msg = `−${entry.hp - newHp} HP`;
+    }
+    const next = entries.map(e => e.id === id ? { ...e, hp: newHp } : e);
     setEntries(next);
+    setHpInputs(prev => ({ ...prev, [id]: '' }));
+    setHpResults(prev => ({ ...prev, [id]: msg }));
     persist(next, round, activeIndex, visibleToPlayers);
   };
 
@@ -448,9 +466,9 @@ export function InitiativeDrawer() {
                       </span>
                     )}
 
-                    {/* Name + type badge */}
+                    {/* Name + type badge + AC */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <span className={`font-mono text-sm truncate ${isActive ? 'text-text-primary' : 'text-text-secondary'}`}>
                           {entry.name}
                         </span>
@@ -459,21 +477,48 @@ export function InitiativeDrawer() {
                             M
                           </span>
                         )}
+                        {isDM && entry.ac !== undefined && (
+                          <span className="font-mono text-[0.55rem] text-sky-400 border border-sky-400/20 rounded px-1 py-0 shrink-0">
+                            AC {entry.ac}
+                          </span>
+                        )}
                       </div>
-                      {/* DM: HP + AC display */}
-                      {isDM && (entry.hp !== undefined || entry.ac !== undefined) && (
-                        <div className="flex items-center gap-2 mt-0.5">
-                          {entry.hp !== undefined && (
-                            <div className="flex items-center gap-1">
-                              <button onClick={() => updateHp(entry.id, -1)} className="text-accent-red text-[0.6rem] font-mono hover:text-accent-red/80">-</button>
-                              <span className={`font-mono text-[0.6rem] ${(entry.hp ?? 0) <= 0 ? 'text-accent-red' : 'text-green-400'}`}>
-                                {entry.hp}{entry.maxHp ? `/${entry.maxHp}` : ''} HP
-                              </span>
-                              <button onClick={() => updateHp(entry.id, 1)} className="text-green-400 text-[0.6rem] font-mono hover:text-green-400/80">+</button>
-                            </div>
-                          )}
-                          {entry.ac !== undefined && (
-                            <span className="font-mono text-[0.6rem] text-sky-400">AC {entry.ac}</span>
+                      {/* DM: HP tracker */}
+                      {isDM && entry.hp !== undefined && (
+                        <div className="mt-1.5 flex flex-col gap-1">
+                          <span className={`font-mono text-xs font-semibold ${(entry.hp ?? 0) <= 0 ? 'text-accent-red' : 'text-green-400'}`}>
+                            {entry.hp}{entry.maxHp != null ? ` / ${entry.maxHp}` : ''} HP
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              min="0"
+                              value={hpInputs[entry.id] ?? ''}
+                              onChange={e => {
+                                setHpInputs(prev => ({ ...prev, [entry.id]: e.target.value }));
+                                setHpResults(prev => ({ ...prev, [entry.id]: '' }));
+                              }}
+                              onKeyDown={e => { if (e.key === 'Enter') applyHp(entry.id, 'damage'); }}
+                              placeholder="Amt"
+                              className="w-14 bg-[#0a0a12] border border-border-subtle rounded px-1.5 py-1 font-mono text-xs text-text-primary text-center focus:outline-none focus:border-accent-purple/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            />
+                            <button
+                              onClick={() => applyHp(entry.id, 'damage')}
+                              className="font-mono text-[0.6rem] border border-accent-red/40 text-accent-red/80 hover:bg-accent-red/10 rounded px-2 py-1 transition-colors whitespace-nowrap"
+                            >
+                              ⚔ Dmg
+                            </button>
+                            <button
+                              onClick={() => applyHp(entry.id, 'heal')}
+                              className="font-mono text-[0.6rem] border border-green-500/40 text-green-400 hover:bg-green-500/10 rounded px-2 py-1 transition-colors whitespace-nowrap"
+                            >
+                              + Heal
+                            </button>
+                          </div>
+                          {hpResults[entry.id] && (
+                            <span className={`font-mono text-[0.6rem] ${hpResults[entry.id].startsWith('+') ? 'text-green-400' : 'text-accent-red/80'}`}>
+                              {hpResults[entry.id]}
+                            </span>
                           )}
                         </div>
                       )}
