@@ -11,14 +11,6 @@ function sorted(entries: InitiativeEntry[]) {
   return [...entries].sort((a, b) => b.initiative - a.initiative);
 }
 
-function SwordsIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="currentColor">
-      <path d="M6.92 5H5l5.5 5.5-1.5 1.5L3.5 6.5V5l3.42 0zM2 2l4 4 4-4h2l-5 5 2 2-1 1-2-2-4 4V10l4-4-4-4V2zm18 0l-4 4-4-4h-2l5 5-2 2 1 1 2-2 4 4v-2l-4-4 4-4V2zM17.08 5H19l-5.5 5.5 1.5 1.5 5.5-5.5V5l-3.42 0zM12 14l-1-1-1 1 1 1 1-1zm-3 3l-1-1-3 3v2h2l3-3-1-1zm6 0l1-1 3 3v2h-2l-3-3 1-1z"/>
-    </svg>
-  );
-}
-
 // ── Main component ────────────────────────────────────────────────────────────
 export function InitiativeDrawer() {
   const { campaign, isDM } = useCampaign();
@@ -40,6 +32,50 @@ export function InitiativeDrawer() {
 
   const [saving, setSaving] = useState(false);
   const suppressRef = useRef(false);
+
+  // ── Draggable panel position ───────────────────────────────────────────
+  const [panelPos, setPanelPos] = useState<{ x: number; y: number } | null>(null);
+  const dragging = useRef(false);
+  const dragOffset = useRef({ x: 0, y: 0 });
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  const onDragStart = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!panelRef.current) return;
+    dragging.current = true;
+    const rect = panelRef.current.getBoundingClientRect();
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    dragOffset.current = { x: clientX - rect.left, y: clientY - rect.top };
+    e.preventDefault();
+  };
+
+  useEffect(() => {
+    const onMove = (e: MouseEvent | TouchEvent) => {
+      if (!dragging.current || !panelRef.current) return;
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+      const newX = clientX - dragOffset.current.x;
+      const newY = clientY - dragOffset.current.y;
+      // Clamp within viewport
+      const w = panelRef.current.offsetWidth;
+      const h = panelRef.current.offsetHeight;
+      setPanelPos({
+        x: Math.max(0, Math.min(window.innerWidth - w, newX)),
+        y: Math.max(0, Math.min(window.innerHeight - h, newY)),
+      });
+    };
+    const onUp = () => { dragging.current = false; };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    window.addEventListener('touchmove', onMove, { passive: false });
+    window.addEventListener('touchend', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      window.removeEventListener('touchmove', onMove);
+      window.removeEventListener('touchend', onUp);
+    };
+  }, []);
 
   // ── Fetch state ──────────────────────────────────────────────────────────
   const fetchState = useCallback(async () => {
@@ -195,30 +231,41 @@ export function InitiativeDrawer() {
           }
         `}
       >
-        <SwordsIcon className="w-7 h-7" />
+        <Icon name="swords" className="text-3xl" />
       </button>
 
-      {/* ── Slide-up panel ── */}
+      {/* ── Panel ── */}
       <div
+        ref={panelRef}
+        style={panelPos ? { left: panelPos.x, top: panelPos.y, right: 'auto', bottom: 'auto' } : {}}
         className={`
-          fixed bottom-24 right-24 z-[298]
+          fixed z-[298]
           w-96 max-h-[80vh] overflow-y-auto
           bg-deep/98 backdrop-blur-xl
           border border-border-subtle rounded-2xl
           shadow-2xl
-          transition-all duration-300 ease-in-out
-          ${open ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-4 pointer-events-none'}
+          ${panelPos ? '' : 'bottom-24 right-24'}
+          ${open
+            ? 'opacity-100 pointer-events-auto' + (panelPos ? '' : ' translate-y-0')
+            : 'opacity-0 pointer-events-none' + (panelPos ? '' : ' translate-y-4')
+          }
+          ${panelPos ? '' : 'transition-all duration-300 ease-in-out'}
         `}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle">
+        {/* Header — drag handle */}
+        <div
+          onMouseDown={onDragStart}
+          onTouchStart={onDragStart}
+          className="flex items-center justify-between px-4 py-3 border-b border-border-subtle cursor-grab active:cursor-grabbing select-none"
+        >
           <div className="flex items-center gap-2">
-            <SwordsIcon className="w-4 h-4 text-accent-purple" />
+            <Icon name="swords" className="text-base text-accent-purple" />
             <span className="font-display text-xs tracking-[0.12em] uppercase text-accent-purple">Initiative</span>
             <span className="font-mono text-[0.6rem] text-text-muted ml-1">Round {round}</span>
           </div>
           <button
             onClick={() => setOpen(false)}
+            onMouseDown={e => e.stopPropagation()}
             className="text-text-muted hover:text-text-primary transition-colors"
           >
             <Icon name="close" className="text-lg" />
