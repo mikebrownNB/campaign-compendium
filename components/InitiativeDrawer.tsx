@@ -241,7 +241,7 @@ export function InitiativeDrawer() {
     try {
       const res = await fetch(`/api/campaigns/${campaignId}/players`);
       if (!res.ok) return;
-      const players: { id: string; name: string }[] = await res.json();
+      const players: { id: string; name: string; ac?: number | null }[] = await res.json();
       const existingNames = new Set(entries.filter(e => e.type === 'player').map(e => e.name));
       const newEntries: InitiativeEntry[] = players
         .filter(p => !existingNames.has(p.name))
@@ -250,6 +250,7 @@ export function InitiativeDrawer() {
           name: p.name,
           initiative: 0,
           type: 'player' as const,
+          ...(p.ac != null ? { ac: p.ac } : {}),
         }));
       if (newEntries.length > 0) {
         const next = sorted([...entries, ...newEntries]);
@@ -478,7 +479,7 @@ export function InitiativeDrawer() {
                           </span>
                         )}
                         {isDM && entry.ac !== undefined && (
-                          <span className="font-mono text-[0.55rem] text-sky-400 border border-sky-400/20 rounded px-1 py-0 shrink-0">
+                          <span className="font-mono text-xs text-sky-400 border border-sky-400/20 rounded px-1 py-0 shrink-0">
                             AC {entry.ac}
                           </span>
                         )}
