@@ -257,8 +257,8 @@ export default function PlayersPage() {
           }
           headerExtra={
             <div className="flex items-center gap-2">
-              {/* AC stat — click to edit (DM only) */}
-              {acEditing && isDM ? (
+              {/* AC stat — click to edit (any campaign member) */}
+              {acEditing ? (
                 <div className="flex items-center gap-1">
                   <Icon name="shield" className="text-sm text-accent-gold/80" />
                   <input
@@ -275,13 +275,13 @@ export default function PlayersPage() {
                 </div>
               ) : (
                 <button
-                  onClick={() => isDM && setAcEditing(true)}
-                  title={isDM ? 'Click to edit AC' : undefined}
-                  className={`flex items-center gap-1 font-mono text-xs border rounded px-2 py-1 transition-colors
+                  onClick={() => setAcEditing(true)}
+                  title="Click to edit AC"
+                  className={`flex items-center gap-1 font-mono text-xs border rounded px-2 py-1 transition-colors cursor-pointer
                     ${selected.ac != null
                       ? 'text-accent-gold border-accent-gold/30 bg-accent-gold/5 hover:bg-accent-gold/10'
                       : 'text-text-muted border-border-subtle hover:border-accent-gold/30'
-                    } ${isDM ? 'cursor-pointer' : 'cursor-default pointer-events-none'}`}
+                    }`}
                 >
                   <Icon name="shield" className="text-sm" />
                   {selected.ac != null ? `AC ${selected.ac}` : 'AC —'}
