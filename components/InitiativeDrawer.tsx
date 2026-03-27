@@ -470,9 +470,9 @@ export function InitiativeDrawer() {
                         <span className={`font-mono text-sm truncate ${isActive ? 'text-text-primary' : 'text-text-secondary'}`}>
                           {entry.name}
                         </span>
-                        {isDM && isMonster && (
-                          <span className="font-mono text-[0.5rem] text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-1 py-0 shrink-0">
-                            M
+                        {isMonster && (
+                          <span className="flex items-center gap-0.5 font-mono text-[0.5rem] text-accent-red bg-accent-red/10 border border-accent-red/30 rounded px-1 py-0 shrink-0">
+                            <Icon name="skull" className="text-[0.6rem]" /> Monster
                           </span>
                         )}
                         {isDM && entry.ac !== undefined && (
