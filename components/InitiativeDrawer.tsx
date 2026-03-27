@@ -161,6 +161,17 @@ export function InitiativeDrawer() {
     persist(next, round, idx, visibleToPlayers);
   };
 
+  const updateInitiative = (id: string, value: number) => {
+    const updated = entries.map(e => e.id === id ? { ...e, initiative: value } : e);
+    const next = sorted(updated);
+    setEntries(next);
+    // Recalculate activeIndex — find the entry that was active before re-sort
+    const activeBefore = sorted(entries)[activeIndex];
+    const newIdx = activeBefore ? next.findIndex(e => e.id === activeBefore.id) : 0;
+    setActiveIndex(Math.max(0, newIdx));
+    persist(next, round, Math.max(0, newIdx), visibleToPlayers);
+  };
+
   const updateHp = (id: string, delta: number) => {
     const next = entries.map(e =>
       e.id === id ? { ...e, hp: Math.max(0, (e.hp ?? 0) + delta) } : e,
@@ -416,9 +427,23 @@ export function InitiativeDrawer() {
                     <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${isActive ? 'bg-accent-purple animate-pulse' : 'bg-transparent'}`} />
 
                     {/* Initiative number */}
-                    <span className="font-mono text-sm font-bold text-accent-purple w-7 text-center shrink-0">
-                      {entry.initiative}
-                    </span>
+                    {isDM ? (
+                      <input
+                        type="number"
+                        value={entry.initiative}
+                        onChange={e => {
+                          const val = parseInt(e.target.value);
+                          if (!isNaN(val)) updateInitiative(entry.id, val);
+                        }}
+                        className="font-mono text-sm font-bold text-accent-purple w-8 text-center shrink-0 bg-transparent border border-transparent rounded
+                                 hover:border-accent-purple/30 focus:border-accent-purple/50 focus:outline-none focus:bg-card transition-colors
+                                 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                    ) : (
+                      <span className="font-mono text-sm font-bold text-accent-purple w-7 text-center shrink-0">
+                        {entry.initiative}
+                      </span>
+                    )}
 
                     {/* Name + type badge */}
                     <div className="flex-1 min-w-0">
