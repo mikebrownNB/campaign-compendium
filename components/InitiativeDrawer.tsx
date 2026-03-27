@@ -92,20 +92,21 @@ export function InitiativeDrawer() {
 
   useEffect(() => { fetchState(); }, [fetchState]);
 
-  // ── Realtime subscription ────────────────────────────────────────────────
+  // ── Realtime via Supabase Broadcast ──────────────────────────────────────
+  // More reliable than postgres_changes with RLS — the DM broadcasts a
+  // "refresh" event after each persist and all clients (players) listen.
+  const channelRef = useRef<ReturnType<ReturnType<typeof getSupabaseBrowser>['channel']> | null>(null);
+
   useEffect(() => {
     const supabase = getSupabaseBrowser();
     const channel = supabase
-      .channel(`initiative_${campaignId}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'initiative_tracker', filter: `campaign_id=eq.${campaignId}` },
-        () => {
-          if (suppressRef.current) { suppressRef.current = false; return; }
-          fetchState();
-        },
-      )
+      .channel(`initiative_sync_${campaignId}`)
+      .on('broadcast', { event: 'refresh' }, () => {
+        if (suppressRef.current) { suppressRef.current = false; return; }
+        fetchState();
+      })
       .subscribe();
+    channelRef.current = channel;
     return () => { supabase.removeChannel(channel); };
   }, [campaignId, fetchState]);
 
@@ -128,6 +129,8 @@ export function InitiativeDrawer() {
         visible_to_players: newVisible,
       }),
     });
+    // Broadcast refresh to all other clients on this channel
+    channelRef.current?.send({ type: 'broadcast', event: 'refresh', payload: {} });
     setSaving(false);
   }, [campaignId]);
 
