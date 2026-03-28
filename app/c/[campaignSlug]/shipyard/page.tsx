@@ -162,11 +162,11 @@ export default function ShipyardPage() {
     }));
   };
 
-  const updateWeaponBay = (bayIndex: number, weaponId: string, count: number) => {
+  const updateWeaponBay = (bayIndex: number, weaponId: string) => {
     updateConfig(c => ({
       ...c,
       weaponBays: c.weaponBays.map((wb, i) =>
-        i === bayIndex ? { ...wb, weapons: [{ weaponId, count: Math.max(1, Math.min(2, count)) }] } : wb
+        i === bayIndex ? { ...wb, weapons: [{ weaponId, count: 1 }] } : wb
       ),
     }));
   };
@@ -491,18 +491,11 @@ export default function ShipyardPage() {
                                     </h5>
                                     <div className="flex gap-2 items-center">
                                       <select value={wb.weapons[0]?.weaponId ?? 'ballista'}
-                                        onChange={e => updateWeaponBay(bayIdx, e.target.value, wb.weapons[0]?.count ?? 1)}
+                                        onChange={e => updateWeaponBay(bayIdx, e.target.value)}
                                         className="bg-deep border border-border-subtle rounded px-2 py-1 text-text-primary font-body text-xs">
                                         {WEAPON_TYPES.map(w => (
-                                          <option key={w.id} value={w.id}>{w.name} ({formatGp(w.cost)})</option>
+                                          <option key={w.id} value={w.id}>{w.name}{w.cost > 0 ? ` (${formatGp(w.cost)})` : ''}</option>
                                         ))}
-                                      </select>
-                                      <span className="text-text-muted text-xs">×</span>
-                                      <select value={wb.weapons[0]?.count ?? 1}
-                                        onChange={e => updateWeaponBay(bayIdx, wb.weapons[0]?.weaponId ?? 'ballista', parseInt(e.target.value))}
-                                        className="bg-deep border border-border-subtle rounded px-2 py-1 text-text-primary font-body text-xs">
-                                        <option value={1}>1</option>
-                                        <option value={2}>2</option>
                                       </select>
                                     </div>
                                     <div className="mt-2 space-y-1">
