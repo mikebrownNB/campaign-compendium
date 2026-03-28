@@ -488,6 +488,12 @@ export function InitiativeDrawer() {
                             {entry.hp}{entry.maxHp != null ? ` / ${entry.maxHp}` : ''} HP
                           </span>
                           <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => applyHp(entry.id, 'damage')}
+                              className="font-mono text-[0.6rem] border border-accent-red/40 text-accent-red/80 hover:bg-accent-red/10 rounded px-2 py-1 transition-colors whitespace-nowrap"
+                            >
+                              ⚔ Dmg
+                            </button>
                             <input
                               type="number"
                               min="0"
@@ -500,12 +506,6 @@ export function InitiativeDrawer() {
                               placeholder="Amt"
                               className="w-14 bg-[#0a0a12] border border-border-subtle rounded px-1.5 py-1 font-mono text-xs text-text-primary text-center focus:outline-none focus:border-accent-purple/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                             />
-                            <button
-                              onClick={() => applyHp(entry.id, 'damage')}
-                              className="font-mono text-[0.6rem] border border-accent-red/40 text-accent-red/80 hover:bg-accent-red/10 rounded px-2 py-1 transition-colors whitespace-nowrap"
-                            >
-                              ⚔ Dmg
-                            </button>
                             <button
                               onClick={() => applyHp(entry.id, 'heal')}
                               className="font-mono text-[0.6rem] border border-green-500/40 text-green-400 hover:bg-green-500/10 rounded px-2 py-1 transition-colors whitespace-nowrap"
