@@ -91,7 +91,7 @@ export interface ShipConfig {
   sailImprovements: string[];
   modules: ShipModuleConfig[];
   weaponBays: WeaponBayConfig[];
-  engineers: number;
+  engineers?: number;
   baseShipId?: string;
 }
 
