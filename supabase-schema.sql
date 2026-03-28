@@ -347,3 +347,14 @@ create index if not exists idx_personal_notes_campaign   on personal_notes(campa
 create index if not exists idx_calendar_year_month       on calendar_events(year, month);
 create index if not exists idx_sessions_number           on sessions(number);
 create index if not exists idx_threads_status            on threads(status);
+
+-- ── Ships (Spelljammer Shipyard) ──────────────────────────────────
+create table if not exists ships (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id uuid references campaigns(id) on delete cascade not null,
+  name text not null,
+  config jsonb not null default '{}',
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+create index if not exists idx_ships_campaign on ships(campaign_id);

@@ -35,6 +35,7 @@ export function NavSidebar() {
     { href: `${base}/loot`,      label: 'Loot',      icon: 'paid' },
     { href: `${base}/sessions`,  label: 'Sessions',  icon: 'history_edu' },
     { href: `${base}/resources`, label: 'Resources', icon: 'library_books' },
+    { href: `${base}/shipyard`,  label: 'Shipyard',  icon: 'rocket_launch' },
     { href: `${base}/dice`,      label: 'Dice',      icon: 'casino' },
     { href: `${base}/notes`,     label: 'My Notes',  icon: 'edit_note' },
   ];

@@ -1,7 +1,7 @@
 import { getSupabaseServer } from './supabase-server';
 import { NextRequest, NextResponse } from 'next/server';
 
-type TableName = 'calendar_events' | 'npcs' | 'locations' | 'factions' | 'loot_items' | 'sessions' | 'threads' | 'map_markers' | 'personal_notes' | 'settings' | 'campaigns' | 'campaign_members' | 'campaign_maps' | 'players' | 'resources' | 'initiative_tracker';
+type TableName = 'calendar_events' | 'npcs' | 'locations' | 'factions' | 'loot_items' | 'sessions' | 'threads' | 'map_markers' | 'personal_notes' | 'settings' | 'campaigns' | 'campaign_members' | 'campaign_maps' | 'players' | 'resources' | 'initiative_tracker' | 'ships';
 
 // Tables that support the dm_only visibility flag
 const DM_ONLY_TABLES: TableName[] = ['npcs', 'locations', 'factions', 'loot_items', 'threads'];

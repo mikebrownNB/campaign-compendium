@@ -282,3 +282,13 @@ export function getCalendarConfig(campaign: Campaign): CalendarConfig {
 // Legacy aliases for backward-compat (used by calendar page)
 export const MONTHS = DEFAULT_CALENDAR.months;
 export const WEEKDAYS = DEFAULT_CALENDAR.weekdays;
+
+// ===== Ship Types =====
+export interface Ship {
+  id: string;
+  campaign_id: string;
+  name: string;
+  config: import('./shipyard/types').ShipConfig;
+  created_at?: string;
+  updated_at?: string;
+}
