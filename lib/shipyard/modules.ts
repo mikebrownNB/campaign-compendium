@@ -52,8 +52,8 @@ export const MODULES: ShipModule[] = [
     functionName: 'Bay Door',
     functionDescription: 'As an action, pull a lever to open a bay door on the wall or floor.',
     improvements: [
-      { id: 'secret-compartment', name: 'Secret Compartment', cost: 500, description: 'Hidden compartment requires DC 20 Investigation to find.' },
-      { id: 'preservation-field', name: 'Preservation Field', cost: 1000, description: 'Perishable goods stored here do not spoil.' },
+      { id: 'ship-dock', name: 'Ship Dock', cost: 500, description: 'The space is outfitted to hold any one vehicle that can completely fit inside it. Opening the bay door ejects the vehicle out of the ship and into the nearest unoccupied space large enough to hold it.' },
+      { id: 'void-lock', name: 'Void Lock', cost: 250, description: "The bay door can't be opened while in space, unless a special command word is spoken as the lever is pulled (the command word can be chosen and changed using the spelljamming helm)." },
     ],
     category: 'utility',
   },
