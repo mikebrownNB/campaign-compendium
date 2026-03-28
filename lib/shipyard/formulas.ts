@@ -97,7 +97,7 @@ export function calculateUpgradeTime(oldConfig: ShipConfig, newConfig: ShipConfi
   let days = 0;
   let gold = 0;
   const engineers = Math.max(1, newConfig.engineers ?? 1);
-  const daysPerModule = Math.ceil(10 / engineers);
+  const daysPerModule = Math.round((10 / engineers) * 2) / 2; // rounds to nearest 0.5
 
   // Hull change
   if (oldConfig.hullType !== newConfig.hullType) {

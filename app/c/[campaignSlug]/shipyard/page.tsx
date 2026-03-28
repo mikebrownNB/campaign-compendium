@@ -377,7 +377,7 @@ export default function ShipyardPage() {
                   className="w-20 bg-deep border border-border-subtle rounded px-3 py-1.5 text-text-primary font-mono text-sm"
                 />
                 <span className="font-mono text-[0.65rem] text-text-muted">
-                  {Math.ceil(10 / Math.max(1, config.engineers ?? 1))} day{Math.ceil(10 / Math.max(1, config.engineers ?? 1)) !== 1 ? 's' : ''} per module
+                  {Math.round((10 / Math.max(1, config.engineers ?? 1)) * 2) / 2} days per module
                 </span>
               </div>
             </div>
