@@ -49,7 +49,7 @@ export const WEAPON_TYPES: WeaponType[] = [
     attackBonus: 6,
     normalRange: 120,
     longRange: 480,
-    damage: '4d10',
+    damage: '8d10',
     damageType: 'bludgeoning',
   },
   {
