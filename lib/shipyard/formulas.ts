@@ -82,3 +82,63 @@ export function computeShipStats(config: ShipConfig): ComputedStats {
 export function formatGp(amount: number): string {
   return amount.toLocaleString() + ' gp';
 }
+
+export interface UpgradeEstimate {
+  days: number;
+  lines: string[];
+}
+
+export function calculateUpgradeTime(oldConfig: ShipConfig, newConfig: ShipConfig): UpgradeEstimate {
+  const lines: string[] = [];
+  let days = 0;
+
+  // Hull change
+  if (oldConfig.hullType !== newConfig.hullType) {
+    days += 7;
+    lines.push('Hull replacement: 7 days');
+  }
+
+  // Hull improvements added
+  const addedHullImps = newConfig.hullImprovements.filter(i => !oldConfig.hullImprovements.includes(i));
+  if (addedHullImps.length > 0) {
+    const d = addedHullImps.length * 2;
+    days += d;
+    lines.push(`${addedHullImps.length} hull improvement${addedHullImps.length > 1 ? 's' : ''}: ${d} days`);
+  }
+
+  // Sails added
+  const sailDiff = newConfig.sailsCount - oldConfig.sailsCount;
+  if (sailDiff > 0) {
+    const d = sailDiff * 3;
+    days += d;
+    lines.push(`+${sailDiff} sail${sailDiff > 1 ? 's' : ''}: ${d} days`);
+  }
+
+  // Sail improvements added
+  const addedSailImps = newConfig.sailImprovements.filter(i => !oldConfig.sailImprovements.includes(i));
+  if (addedSailImps.length > 0) {
+    const d = addedSailImps.length * 2;
+    days += d;
+    lines.push(`${addedSailImps.length} sail improvement${addedSailImps.length > 1 ? 's' : ''}: ${d} days`);
+  }
+
+  // Modules added / improvements added
+  for (const newMod of newConfig.modules) {
+    const oldMod = oldConfig.modules.find(m => m.moduleId === newMod.moduleId);
+    const added = oldMod ? Math.max(0, newMod.quantity - oldMod.quantity) : newMod.quantity;
+    if (added > 0) {
+      const d = added * 5;
+      days += d;
+      lines.push(`+${added} ${newMod.moduleId.replace(/-/g, ' ')}: ${d} days`);
+    }
+    const oldImps = oldMod?.improvements ?? [];
+    const addedImps = newMod.improvements.filter(i => !oldImps.includes(i));
+    if (addedImps.length > 0) {
+      const d = addedImps.length * 2;
+      days += d;
+      lines.push(`${addedImps.length} ${newMod.moduleId.replace(/-/g, ' ')} upgrade${addedImps.length > 1 ? 's' : ''}: ${d} days`);
+    }
+  }
+
+  return { days, lines };
+}

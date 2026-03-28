@@ -10,7 +10,7 @@ import { HULL_TYPES, HULL_IMPROVEMENTS } from '@/lib/shipyard/hulls';
 import { SAIL_OPTIONS, SAIL_IMPROVEMENTS } from '@/lib/shipyard/sails';
 import { WEAPON_TYPES, WEAPON_BAY_IMPROVEMENTS } from '@/lib/shipyard/weapons';
 import { BASE_SHIPS } from '@/lib/shipyard/base-ships';
-import { computeShipStats, formatGp } from '@/lib/shipyard/formulas';
+import { computeShipStats, formatGp, calculateUpgradeTime, type UpgradeEstimate } from '@/lib/shipyard/formulas';
 import { PageHeader, Button, Input, EmptyState } from '@/components/UI';
 import { Icon } from '@/components/Icon';
 
@@ -40,6 +40,7 @@ export default function ShipyardPage() {
   const [showBaseShips, setShowBaseShips] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [upgradeConfirm, setUpgradeConfirm] = useState<UpgradeEstimate | null>(null);
 
   const [editId, setEditId] = useState<string | null>(null);
   const [shipName, setShipName] = useState('');
@@ -71,12 +72,26 @@ export default function ShipyardPage() {
 
   const saveShip = async () => {
     if (!shipName.trim()) return;
+    if (editId) {
+      const originalShip = ships.find(s => s.id === editId);
+      if (originalShip) {
+        const estimate = calculateUpgradeTime(originalShip.config, config);
+        if (estimate.days > 0) {
+          setUpgradeConfirm(estimate);
+          return;
+        }
+      }
+    }
+    await doSave();
+  };
+
+  const doSave = async () => {
     setSaving(true);
     try {
       if (editId) { await update({ id: editId, name: shipName.trim(), config } as unknown as Record<string, unknown> & { id: string }); }
       else { await create({ name: shipName.trim(), config } as unknown as Record<string, unknown> & { id: string }); }
       setView('list');
-    } finally { setSaving(false); }
+    } finally { setSaving(false); setUpgradeConfirm(null); }
   };
 
   const deleteShip = async (id: string) => {
@@ -553,6 +568,15 @@ export default function ShipyardPage() {
           </div>
         </div>
       </div>
+
+      {upgradeConfirm && (
+        <UpgradeConfirmModal
+          estimate={upgradeConfirm}
+          onCancel={() => setUpgradeConfirm(null)}
+          onConfirm={doSave}
+          saving={saving}
+        />
+      )}
     </div>
   );
 }
@@ -609,6 +633,39 @@ function StatBlock({ label, value, sub }: { label: string; value: string | numbe
       <div className="font-mono text-[0.6rem] text-text-muted uppercase tracking-wider">{label}</div>
       <div className="font-display text-accent-gold text-sm mt-1">{value}</div>
       {sub && <div className="font-mono text-[0.55rem] text-text-muted mt-0.5">{sub}</div>}
+    </div>
+  );
+}
+
+function UpgradeConfirmModal({ estimate, onCancel, onConfirm, saving }: {
+  estimate: UpgradeEstimate; onCancel: () => void; onConfirm: () => void; saving: boolean;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-black/70" onClick={onCancel} />
+      <div className="relative bg-deep border border-border-subtle rounded-2xl p-6 max-w-md w-full">
+        <div className="flex items-center gap-3 mb-4">
+          <Icon name="schedule" className="text-accent-gold text-xl" />
+          <h2 className="font-display text-accent-gold text-sm tracking-wider uppercase">Shipyard Work Required</h2>
+        </div>
+        <p className="font-body text-text-secondary text-sm mb-4">
+          These upgrades will require <span className="text-accent-gold font-bold">{estimate.days} day{estimate.days !== 1 ? 's' : ''}</span> of shipyard work to complete.
+        </p>
+        <ul className="space-y-1 mb-5">
+          {estimate.lines.map((line, i) => (
+            <li key={i} className="flex items-center gap-2 font-mono text-[0.65rem] text-text-muted">
+              <span className="text-accent-gold/50">—</span> {line}
+            </li>
+          ))}
+        </ul>
+        <p className="font-body text-text-muted text-xs mb-5">Proceed with these changes?</p>
+        <div className="flex gap-2 justify-end">
+          <Button variant="secondary" size="sm" onClick={onCancel} disabled={saving}>Cancel</Button>
+          <Button size="sm" onClick={onConfirm} disabled={saving}>
+            <Icon name="build" className="text-sm" /> {saving ? 'Saving...' : 'Confirm Changes'}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
