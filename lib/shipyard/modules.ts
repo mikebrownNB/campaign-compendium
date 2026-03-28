@@ -133,8 +133,8 @@ export const MODULES: ShipModule[] = [
     functionDescription: 'Each work week: Food (1d8\u00d710 lbs.), Medicine (1d8\u00d725 gp herbs), or Poison (1d8\u00d725 gp).',
     prerequisite: 'Proficiency in Nature or Survival',
     improvements: [
-      { id: 'accelerated-growth', name: 'Accelerated Growth', cost: 2000, description: 'Grow Plants produces double the normal amount.' },
-      { id: 'rare-specimens', name: 'Rare Specimens', cost: 3000, description: 'Grow rare magical plants worth up to 500 gp per work week.' },
+      { id: 'enriched-soil', name: 'Enriched Soil', cost: 2000, description: "The yield of the Greenhouse's Grow Plants function is doubled." },
+      { id: 'alchemists-station', name: "Alchemist's Station", cost: 200, description: "The Greenhouse functions as a set of alchemist's supplies, an herbalism kit, and a set of poisoner's tools." },
     ],
     category: 'utility',
   },
