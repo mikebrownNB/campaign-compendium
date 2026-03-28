@@ -278,7 +278,7 @@ export default function ShipyardPage() {
               <div key={`${mc.moduleId}-${idx}`} className="bg-card border border-border-subtle rounded-lg p-4">
                 <div className="flex items-center justify-between">
                   <span className="font-display text-accent-gold text-xs tracking-wider uppercase">
-                    {mod.name} {mc.quantity > 1 ? `\u00d7${mc.quantity}` : ''}
+                    {mod.name} {mc.quantity > 1 ? `×${mc.quantity}` : ''}
                   </span>
                   <span className="font-mono text-[0.6rem] text-text-muted">{formatGp(mod.cost)}</span>
                 </div>
@@ -312,7 +312,7 @@ export default function ShipyardPage() {
                     return (
                       <div key={wi}>
                         <span className="font-display text-accent-red text-xs tracking-wider uppercase">
-                          {weapon.name} {w.count > 1 ? `\u00d7${w.count}` : ''}
+                          {weapon.name} {w.count > 1 ? `×${w.count}` : ''}
                         </span>
                         <p className="font-mono text-[0.6rem] text-text-muted mt-1">
                           +{weapon.attackBonus} to hit &middot; {weapon.damage} {weapon.damageType} &middot; {weapon.normalRange}/{weapon.longRange} ft.
@@ -417,7 +417,7 @@ export default function ShipyardPage() {
                         <Icon name={isExpanded ? 'expand_more' : 'chevron_right'} className="text-sm text-text-muted" />
                         <div className="flex-1">
                           <span className="font-display text-accent-gold text-xs tracking-wider uppercase">{mod.name}</span>
-                          {mc.quantity > 1 && <span className="font-mono text-[0.6rem] text-text-muted ml-2">\u00d7{mc.quantity}</span>}
+                          {mc.quantity > 1 && <span className="font-mono text-[0.6rem] text-text-muted ml-2">×{mc.quantity}</span>}
                           <span className="font-mono text-[0.6rem] text-text-muted ml-2">({formatGp(mod.cost * mc.quantity)})</span>
                         </div>
                         {mc.improvements.length > 0 && (
@@ -458,7 +458,7 @@ export default function ShipyardPage() {
                                     <option key={w.id} value={w.id}>{w.name} ({formatGp(w.cost)})</option>
                                   ))}
                                 </select>
-                                <span className="text-text-muted text-xs">\u00d7</span>
+                                <span className="text-text-muted text-xs">×</span>
                                 <select value={wb.weapons[0]?.count ?? 1}
                                   onChange={e => updateWeaponBay(wbIdx, wb.weapons[0]?.weaponId ?? 'ballista', parseInt(e.target.value))}
                                   className="bg-deep border border-border-subtle rounded px-2 py-1 text-text-primary font-body text-xs">

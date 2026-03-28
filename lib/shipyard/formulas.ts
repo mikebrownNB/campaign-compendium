@@ -9,7 +9,7 @@ export function computeShipStats(config: ShipConfig): ComputedStats {
   const ac = hull.ac;
 
   const totalModules = config.modules.reduce((sum, m) => sum + m.quantity, 0);
-  const hp = totalModules * 50;
+  const hp = Math.min(totalModules * 50, 500);
   const damageThreshold = 15;
 
   const sailOption = SAIL_OPTIONS.find(s => s.count === config.sailsCount) ?? SAIL_OPTIONS[0];
