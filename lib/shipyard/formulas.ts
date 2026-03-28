@@ -4,6 +4,9 @@ import { SAIL_OPTIONS, SAIL_IMPROVEMENTS } from './sails';
 import { getModuleById } from './modules';
 import { WEAPON_TYPES, WEAPON_BAY_IMPROVEMENTS } from './weapons';
 
+// Re-export for convenience
+export { HULL_TYPES, SAIL_OPTIONS };
+
 export function computeShipStats(config: ShipConfig): ComputedStats {
   const hull = HULL_TYPES.find(h => h.id === config.hullType) ?? HULL_TYPES[0];
   const ac = hull.ac;
@@ -85,60 +88,78 @@ export function formatGp(amount: number): string {
 
 export interface UpgradeEstimate {
   days: number;
+  gold: number;
   lines: string[];
 }
 
 export function calculateUpgradeTime(oldConfig: ShipConfig, newConfig: ShipConfig): UpgradeEstimate {
   const lines: string[] = [];
   let days = 0;
+  let gold = 0;
+  const engineers = Math.max(1, newConfig.engineers ?? 1);
+  const daysPerModule = Math.ceil(10 / engineers);
 
   // Hull change
   if (oldConfig.hullType !== newConfig.hullType) {
+    const oldHull = HULL_TYPES.find(h => h.id === oldConfig.hullType);
+    const newHull = HULL_TYPES.find(h => h.id === newConfig.hullType);
+    const gp = Math.max(0, (newHull?.cost ?? 0) - (oldHull?.cost ?? 0));
     days += 7;
-    lines.push('Hull replacement: 7 days');
+    gold += gp;
+    lines.push(`Hull replacement: 7 days${gp > 0 ? `, ${formatGp(gp)}` : ''}`);
   }
 
   // Hull improvements added
   const addedHullImps = newConfig.hullImprovements.filter(i => !oldConfig.hullImprovements.includes(i));
   if (addedHullImps.length > 0) {
     const d = addedHullImps.length * 2;
-    days += d;
-    lines.push(`${addedHullImps.length} hull improvement${addedHullImps.length > 1 ? 's' : ''}: ${d} days`);
+    const gp = addedHullImps.reduce((sum, id) => sum + (HULL_IMPROVEMENTS.find(h => h.id === id)?.cost ?? 0), 0);
+    days += d; gold += gp;
+    lines.push(`${addedHullImps.length} hull improvement${addedHullImps.length > 1 ? 's' : ''}: ${d} days, ${formatGp(gp)}`);
   }
 
   // Sails added
   const sailDiff = newConfig.sailsCount - oldConfig.sailsCount;
   if (sailDiff > 0) {
+    const oldSail = SAIL_OPTIONS.find(s => s.count === oldConfig.sailsCount);
+    const newSail = SAIL_OPTIONS.find(s => s.count === newConfig.sailsCount);
     const d = sailDiff * 3;
-    days += d;
-    lines.push(`+${sailDiff} sail${sailDiff > 1 ? 's' : ''}: ${d} days`);
+    const gp = Math.max(0, (newSail?.cost ?? 0) - (oldSail?.cost ?? 0));
+    days += d; gold += gp;
+    lines.push(`+${sailDiff} sail${sailDiff > 1 ? 's' : ''}: ${d} days, ${formatGp(gp)}`);
   }
 
   // Sail improvements added
   const addedSailImps = newConfig.sailImprovements.filter(i => !oldConfig.sailImprovements.includes(i));
   if (addedSailImps.length > 0) {
     const d = addedSailImps.length * 2;
-    days += d;
-    lines.push(`${addedSailImps.length} sail improvement${addedSailImps.length > 1 ? 's' : ''}: ${d} days`);
+    const gp = addedSailImps.reduce((sum, id) => sum + (SAIL_IMPROVEMENTS.find(s => s.id === id)?.cost ?? 0), 0);
+    days += d; gold += gp;
+    lines.push(`${addedSailImps.length} sail improvement${addedSailImps.length > 1 ? 's' : ''}: ${d} days, ${formatGp(gp)}`);
   }
 
   // Modules added / improvements added
   for (const newMod of newConfig.modules) {
+    const modDef = getModuleById(newMod.moduleId);
     const oldMod = oldConfig.modules.find(m => m.moduleId === newMod.moduleId);
     const added = oldMod ? Math.max(0, newMod.quantity - oldMod.quantity) : newMod.quantity;
     if (added > 0) {
-      const d = added * 5;
-      days += d;
-      lines.push(`+${added} ${newMod.moduleId.replace(/-/g, ' ')}: ${d} days`);
+      const d = added * daysPerModule;
+      const gp = added * (modDef?.cost ?? 0);
+      days += d; gold += gp;
+      const label = modDef?.name ?? newMod.moduleId.replace(/-/g, ' ');
+      lines.push(`+${added} ${label}: ${d} day${d !== 1 ? 's' : ''}, ${formatGp(gp)} (${engineers} engineer${engineers !== 1 ? 's' : ''})`);
     }
     const oldImps = oldMod?.improvements ?? [];
     const addedImps = newMod.improvements.filter(i => !oldImps.includes(i));
     if (addedImps.length > 0) {
       const d = addedImps.length * 2;
-      days += d;
-      lines.push(`${addedImps.length} ${newMod.moduleId.replace(/-/g, ' ')} upgrade${addedImps.length > 1 ? 's' : ''}: ${d} days`);
+      const gp = addedImps.reduce((sum, id) => sum + (modDef?.improvements.find(i => i.id === id)?.cost ?? 0), 0);
+      days += d; gold += gp;
+      const label = modDef?.name ?? newMod.moduleId.replace(/-/g, ' ');
+      lines.push(`${addedImps.length} ${label} upgrade${addedImps.length > 1 ? 's' : ''}: ${d} days, ${formatGp(gp)}`);
     }
   }
 
-  return { days, lines };
+  return { days, gold, lines };
 }

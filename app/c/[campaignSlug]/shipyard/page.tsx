@@ -22,6 +22,7 @@ function emptyConfig(): ShipConfig {
     sailImprovements: [],
     modules: [{ moduleId: 'spelljamming-helm', quantity: 1, improvements: [] }],
     weaponBays: [],
+    engineers: 1,
   };
 }
 
@@ -366,6 +367,20 @@ export default function ShipyardPage() {
           {/* Ship Name */}
           <BuilderSection title="Ship Identity" icon="badge">
             <Input label="Ship Name" value={shipName} onChange={e => setShipName(e.target.value)} placeholder="Enter ship name..." />
+            <div className="mt-3">
+              <label className="font-display text-xs tracking-wider uppercase text-text-secondary block mb-1">Engineers</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number" min={1} max={99}
+                  value={config.engineers ?? 1}
+                  onChange={e => updateConfig(c => ({ ...c, engineers: Math.max(1, parseInt(e.target.value) || 1) }))}
+                  className="w-20 bg-deep border border-border-subtle rounded px-3 py-1.5 text-text-primary font-mono text-sm"
+                />
+                <span className="font-mono text-[0.65rem] text-text-muted">
+                  {Math.ceil(10 / Math.max(1, config.engineers ?? 1))} day{Math.ceil(10 / Math.max(1, config.engineers ?? 1)) !== 1 ? 's' : ''} per module
+                </span>
+              </div>
+            </div>
           </BuilderSection>
 
           {/* Hull Type */}
@@ -649,7 +664,9 @@ function UpgradeConfirmModal({ estimate, onCancel, onConfirm, saving }: {
           <h2 className="font-display text-accent-gold text-sm tracking-wider uppercase">Shipyard Work Required</h2>
         </div>
         <p className="font-body text-text-secondary text-sm mb-4">
-          These upgrades will require <span className="text-accent-gold font-bold">{estimate.days} day{estimate.days !== 1 ? 's' : ''}</span> of shipyard work to complete.
+          These upgrades will require{' '}
+          <span className="text-accent-gold font-bold">{estimate.days} day{estimate.days !== 1 ? 's' : ''}</span> of shipyard work
+          {estimate.gold > 0 && <> and <span className="text-accent-gold font-bold">{formatGp(estimate.gold)}</span></>} to complete.
         </p>
         <ul className="space-y-1 mb-5">
           {estimate.lines.map((line, i) => (
