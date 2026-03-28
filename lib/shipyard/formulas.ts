@@ -13,7 +13,8 @@ export function computeShipStats(config: ShipConfig): ComputedStats {
 
   const totalModules = config.modules.reduce((sum, m) => sum + m.quantity, 0);
   const hp = Math.min(totalModules * 50, 500);
-  const damageThreshold = 15;
+  const hasWardGenerator = config.modules.some(m => m.moduleId === 'ward-generator' && m.quantity > 0);
+  const damageThreshold = hasWardGenerator ? 20 : 15;
 
   const sailOption = SAIL_OPTIONS.find(s => s.count === config.sailsCount) ?? SAIL_OPTIONS[0];
   const flyingSpeed = sailOption.flyingSpeed;
