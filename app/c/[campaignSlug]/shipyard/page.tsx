@@ -90,7 +90,10 @@ export default function ShipyardPage() {
       const moduleDef = getModuleById(moduleId);
       if (existing && moduleDef?.maxQuantity && existing.quantity >= moduleDef.maxQuantity) return c;
       if (existing) {
-        return { ...c, modules: c.modules.map(m => m.moduleId === moduleId ? { ...m, quantity: m.quantity + 1 } : m) };
+        const newWeaponBays = moduleId === 'weapon-bay'
+          ? [...c.weaponBays, { weapons: [{ weaponId: 'ballista', count: 1 }], improvements: [] }]
+          : c.weaponBays;
+        return { ...c, modules: c.modules.map(m => m.moduleId === moduleId ? { ...m, quantity: m.quantity + 1 } : m), weaponBays: newWeaponBays };
       }
       const newModules = [...c.modules, { moduleId, quantity: 1, improvements: [] }];
       const newWeaponBays = moduleId === 'weapon-bay'
@@ -406,9 +409,7 @@ export default function ShipyardPage() {
                   if (!mod) return null;
                   const key = `${mc.moduleId}-${idx}`;
                   const isExpanded = expandedModule === key;
-                  const wbModules = config.modules.filter(m => m.moduleId === 'weapon-bay');
-                  const wbIdx = mc.moduleId === 'weapon-bay' ? wbModules.indexOf(mc) : -1;
-                  const wb = wbIdx >= 0 ? config.weaponBays[wbIdx] : null;
+                  const wbStartIdx = config.modules.slice(0, idx).filter(m => m.moduleId === 'weapon-bay').reduce((sum, m) => sum + m.quantity, 0);
 
                   return (
                     <div key={key} className="bg-card border border-border-subtle rounded-lg overflow-hidden">
@@ -447,31 +448,42 @@ export default function ShipyardPage() {
                           <p className="text-text-muted text-[0.6rem] mb-3">{mod.functionDescription}</p>
                           {mod.prerequisite && <p className="text-accent-purple text-[0.6rem] mb-3"><em>Prerequisite: {mod.prerequisite}</em></p>}
 
-                          {wb && (
-                            <div className="mb-3 p-2 bg-deep rounded-lg">
-                              <h5 className="font-mono text-[0.6rem] text-text-muted uppercase mb-2">Weapon Selection</h5>
-                              <div className="flex gap-2 items-center">
-                                <select value={wb.weapons[0]?.weaponId ?? 'ballista'}
-                                  onChange={e => updateWeaponBay(wbIdx, e.target.value, wb.weapons[0]?.count ?? 1)}
-                                  className="bg-deep border border-border-subtle rounded px-2 py-1 text-text-primary font-body text-xs">
-                                  {WEAPON_TYPES.filter(w => w.id !== 'starlight-cannon').map(w => (
-                                    <option key={w.id} value={w.id}>{w.name} ({formatGp(w.cost)})</option>
-                                  ))}
-                                </select>
-                                <span className="text-text-muted text-xs">×</span>
-                                <select value={wb.weapons[0]?.count ?? 1}
-                                  onChange={e => updateWeaponBay(wbIdx, wb.weapons[0]?.weaponId ?? 'ballista', parseInt(e.target.value))}
-                                  className="bg-deep border border-border-subtle rounded px-2 py-1 text-text-primary font-body text-xs">
-                                  <option value={1}>1</option>
-                                  <option value={2}>2</option>
-                                </select>
-                              </div>
-                              <div className="mt-2 space-y-1">
-                                {WEAPON_BAY_IMPROVEMENTS.map(imp => (
-                                  <ImprovementCheckbox key={imp.id} label={imp.name} cost={imp.cost} description=""
-                                    checked={wb.improvements.includes(imp.id)} onChange={() => toggleWeaponBayImprovement(wbIdx, imp.id)} small />
-                                ))}
-                              </div>
+                          {mc.moduleId === 'weapon-bay' && (
+                            <div className="mb-3 space-y-2">
+                              {Array.from({ length: mc.quantity }, (_, offset) => {
+                                const bayIdx = wbStartIdx + offset;
+                                const wb = config.weaponBays[bayIdx];
+                                if (!wb) return null;
+                                return (
+                                  <div key={bayIdx} className="p-2 bg-deep rounded-lg">
+                                    <h5 className="font-mono text-[0.6rem] text-text-muted uppercase mb-2">
+                                      {mc.quantity > 1 ? `Weapon Bay ${offset + 1}` : 'Weapon Selection'}
+                                    </h5>
+                                    <div className="flex gap-2 items-center">
+                                      <select value={wb.weapons[0]?.weaponId ?? 'ballista'}
+                                        onChange={e => updateWeaponBay(bayIdx, e.target.value, wb.weapons[0]?.count ?? 1)}
+                                        className="bg-deep border border-border-subtle rounded px-2 py-1 text-text-primary font-body text-xs">
+                                        {WEAPON_TYPES.map(w => (
+                                          <option key={w.id} value={w.id}>{w.name} ({formatGp(w.cost)})</option>
+                                        ))}
+                                      </select>
+                                      <span className="text-text-muted text-xs">×</span>
+                                      <select value={wb.weapons[0]?.count ?? 1}
+                                        onChange={e => updateWeaponBay(bayIdx, wb.weapons[0]?.weaponId ?? 'ballista', parseInt(e.target.value))}
+                                        className="bg-deep border border-border-subtle rounded px-2 py-1 text-text-primary font-body text-xs">
+                                        <option value={1}>1</option>
+                                        <option value={2}>2</option>
+                                      </select>
+                                    </div>
+                                    <div className="mt-2 space-y-1">
+                                      {WEAPON_BAY_IMPROVEMENTS.map(imp => (
+                                        <ImprovementCheckbox key={imp.id} label={imp.name} cost={imp.cost} description=""
+                                          checked={wb.improvements.includes(imp.id)} onChange={() => toggleWeaponBayImprovement(bayIdx, imp.id)} small />
+                                      ))}
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
                           )}
 
