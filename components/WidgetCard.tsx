@@ -356,6 +356,12 @@ function SpelljammerCard({
           <div className="bg-deep/40 border border-border-subtle rounded-lg px-3 py-2.5 mb-4">
             <p className="font-mono text-[0.5rem] text-text-muted uppercase tracking-wider mb-2">Apply Damage / Healing</p>
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => applyHp('damage')}
+                className="font-mono text-[0.65rem] border border-accent-red/40 text-accent-red/80 hover:bg-accent-red/10 rounded px-3 py-1.5 transition-colors"
+              >
+                ⚔ Damage
+              </button>
               <input
                 type="number"
                 min="0"
@@ -365,12 +371,6 @@ function SpelljammerCard({
                 placeholder="Amount"
                 className="w-24 bg-deep/60 border border-border-subtle rounded px-2 py-1.5 text-sm text-text-primary focus:outline-none focus:border-accent-gold font-mono text-center"
               />
-              <button
-                onClick={() => applyHp('damage')}
-                className="font-mono text-[0.65rem] border border-accent-red/40 text-accent-red/80 hover:bg-accent-red/10 rounded px-3 py-1.5 transition-colors"
-              >
-                ⚔ Damage
-              </button>
               <button
                 onClick={() => applyHp('heal')}
                 className="font-mono text-[0.65rem] border border-green-500/40 text-green-400 hover:bg-green-500/10 rounded px-3 py-1.5 transition-colors"
