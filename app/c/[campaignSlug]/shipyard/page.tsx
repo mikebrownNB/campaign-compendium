@@ -73,8 +73,8 @@ export default function ShipyardPage() {
     if (!shipName.trim()) return;
     setSaving(true);
     try {
-      if (editId) { await update({ id: editId, name: shipName.trim(), config } as Ship); }
-      else { await create({ name: shipName.trim(), config } as Ship); }
+      if (editId) { await update({ id: editId, name: shipName.trim(), config } as unknown as Record<string, unknown> & { id: string }); }
+      else { await create({ name: shipName.trim(), config } as unknown as Record<string, unknown> & { id: string }); }
       setView('list');
     } finally { setSaving(false); }
   };
